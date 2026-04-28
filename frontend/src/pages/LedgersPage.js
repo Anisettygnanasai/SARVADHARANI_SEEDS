@@ -32,7 +32,7 @@ export default function LedgersPage() {
         { key: "ledger_code", title: "Code" },
         { key: "ledger_type", title: "Type" },
         { key: "current_balance", title: "Current Balance" },
-      ]} />
+      ]} filterKey="ledger_type" />
     </div>
   );
 }

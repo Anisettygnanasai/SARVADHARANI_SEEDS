@@ -31,7 +31,7 @@ export default function StockPage() {
         { key: "name", title: "Name" },
         { key: "quantity_on_hand", title: "Qty" },
         { key: "unit_price", title: "Unit Price" },
-      ]} />
+      ]} filterKey="unit" />
     </div>
   );
 }

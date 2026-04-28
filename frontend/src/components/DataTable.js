@@ -1,21 +1,39 @@
 import React, { useMemo, useState } from "react";
 
-export default function DataTable({ rows, columns }) {
+export default function DataTable({ rows, columns, filterKey }) {
   const [query, setQuery] = useState("");
+  const [filterValue, setFilterValue] = useState("all");
+
+  const filterOptions = useMemo(() => {
+    if (!filterKey) return [];
+    return Array.from(new Set(rows.map((r) => String(r[filterKey] ?? "")).filter(Boolean)));
+  }, [rows, filterKey]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r) => columns.some((c) => String(r[c.key] ?? "").toLowerCase().includes(q)));
-  }, [rows, columns, query]);
+    return rows.filter((r) => {
+      const searchMatch = !q || columns.some((c) => String(r[c.key] ?? "").toLowerCase().includes(q));
+      const dropdownMatch = !filterKey || filterValue === "all" || String(r[filterKey]) === filterValue;
+      return searchMatch && dropdownMatch;
+    });
+  }, [rows, columns, query, filterKey, filterValue]);
 
   return (
     <div className="rounded-lg bg-white p-4 shadow">
-      <input
-        placeholder="Search..."
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="mb-3 w-full rounded border px-3 py-2"
-      />
+      <div className="mb-3 flex flex-col gap-2 md:flex-row">
+        <input
+          placeholder="Search..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="w-full rounded border px-3 py-2"
+        />
+        {filterKey && (
+          <select className="rounded border px-3 py-2" value={filterValue} onChange={(e) => setFilterValue(e.target.value)}>
+            <option value="all">All</option>
+            {filterOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+          </select>
+        )}
+      </div>
       <div className="overflow-auto">
         <table className="min-w-full text-sm">
           <thead>

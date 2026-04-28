@@ -42,7 +42,10 @@ def create_ledger():
     if payload["ledger_type"] not in ["customer", "supplier", "expense"]:
         return jsonify({"message": "Invalid ledger type"}), 400
 
-    opening_balance = parse_decimal(payload["opening_balance"], "opening_balance")
+    try:
+        opening_balance = parse_decimal(payload["opening_balance"], "opening_balance")
+    except ValueError as err:
+        return jsonify({"message": str(err)}), 400
 
     ledger = Ledger(
         name=payload["name"].strip(),
@@ -71,7 +74,10 @@ def update_ledger(ledger_id):
     if "name" in payload:
         ledger.name = payload["name"].strip()
     if "ledger_type" in payload:
-        ledger.ledger_type = LedgerType(payload["ledger_type"])
+        try:
+            ledger.ledger_type = LedgerType(payload["ledger_type"])
+        except ValueError:
+            return jsonify({"message": "Invalid ledger type"}), 400
     if "contact_person" in payload:
         ledger.contact_person = payload["contact_person"]
     if "phone" in payload:

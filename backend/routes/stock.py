@@ -37,9 +37,12 @@ def create_stock_item():
     if error:
         return error
 
-    qty = parse_decimal(payload["quantity_on_hand"], "quantity_on_hand")
-    price = parse_decimal(payload["unit_price"], "unit_price")
-    reorder_level = parse_decimal(payload.get("reorder_level", 0), "reorder_level")
+    try:
+        qty = parse_decimal(payload["quantity_on_hand"], "quantity_on_hand")
+        price = parse_decimal(payload["unit_price"], "unit_price")
+        reorder_level = parse_decimal(payload.get("reorder_level", 0), "reorder_level")
+    except ValueError as err:
+        return jsonify({"message": str(err)}), 400
 
     item = StockItem(
         sku=payload["sku"].strip().upper(),
@@ -84,10 +87,13 @@ def update_stock_item(stock_id):
         item.description = payload["description"]
     if "unit" in payload:
         item.unit = payload["unit"]
-    if "unit_price" in payload:
-        item.unit_price = parse_decimal(payload["unit_price"], "unit_price")
-    if "reorder_level" in payload:
-        item.reorder_level = parse_decimal(payload["reorder_level"], "reorder_level")
+    try:
+        if "unit_price" in payload:
+            item.unit_price = parse_decimal(payload["unit_price"], "unit_price")
+        if "reorder_level" in payload:
+            item.reorder_level = parse_decimal(payload["reorder_level"], "reorder_level")
+    except ValueError as err:
+        return jsonify({"message": str(err)}), 400
     if "is_active" in payload:
         item.is_active = bool(payload["is_active"])
 

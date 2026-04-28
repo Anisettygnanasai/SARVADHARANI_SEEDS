@@ -71,7 +71,7 @@ export default function TransactionsPage() {
         { key: "transaction_type", title: "Type" },
         { key: "ledger_id", title: "Ledger" },
         { key: "total_amount", title: "Amount" },
-      ]} />
+      ]} filterKey="transaction_type" />
     </div>
   );
 }
