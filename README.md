@@ -1,4 +1,5 @@
 # SARVADHARANI_SEEDS
+# SARVADHARANI_SEEDS
 
 Modern lightweight accounting ERP inspired by Tally ERP.
 
@@ -74,4 +75,3 @@ If `npm start` shows `Could not find a required file: public/index.html`, ensure
 
 ## Database
 Run `database/schema.sql` first to create tables and enums.
-
