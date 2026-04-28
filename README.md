@@ -47,6 +47,21 @@ npm install
 npm start
 ```
 
+
+### Frontend prerequisites (important)
+
+- Use Node.js **20.x** (recommended: 20.14.0+).
+- Use npm **10.x** (do not upgrade to npm 11 on Node 20).
+
+Quick checks:
+
+```bash
+node -v
+npm -v
+```
+
+If `npm start` shows `Could not find a required file: public/index.html`, ensure this file exists at `frontend/public/index.html`.
+
 ## Authentication & Authorization
 - `/api/auth/register`
 - `/api/auth/login`
