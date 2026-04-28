@@ -1,67 +1,62 @@
 # SARVADHARANI_SEEDS
 
-## GitHub connection troubleshooting
+Modern lightweight accounting ERP inspired by Tally ERP.
 
-If you see errors like **"cannot connect to GitHub repository"** or **"no configured push destination"**, verify your Git remote and authentication.
+## Stack
+- Frontend: React + Tailwind CSS + Axios
+- Backend: Flask + SQLAlchemy + Flask-JWT-Extended
+- Database: PostgreSQL
 
-### 1) Check current remote
+## Project Structure
 
-```bash
-git remote -v
+```text
+backend/
+├── app.py
+├── config.py
+├── models/
+├── routes/
+├── services/
+└── utils/
+
+frontend/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── services/
+│   ├── hooks/
+│   └── App.js
 ```
 
-If nothing is returned, add your GitHub repository remote.
-
-### 2) Add repository remote
+## Backend Setup
 
 ```bash
-git remote add origin https://github.com/<your-org-or-user>/<your-repo>.git
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+export DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/erp_db"
+export JWT_SECRET_KEY="replace-with-secure-key"
+python app.py
 ```
 
-Or if SSH is preferred:
+## Frontend Setup
 
 ```bash
-git remote add origin git@github.com:<your-org-or-user>/<your-repo>.git
+cd frontend
+npm install
+npm start
 ```
 
-### 3) Verify branch and push
+## Authentication & Authorization
+- `/api/auth/register`
+- `/api/auth/login`
+- Role-based access: `admin`, `accountant`
 
-```bash
-git branch --show-current
-git push -u origin <your-branch>
-```
+## Core Modules
+- Ledger management APIs under `/api/ledgers`
+- Stock management APIs under `/api/stocks`
+- Transaction APIs under `/api/transactions`
 
-### 4) If using HTTPS and prompted repeatedly
+## Database
+Run `database/schema.sql` first to create tables and enums.
 
-Use a GitHub Personal Access Token (PAT) with repo permissions as the password.
-
-### 5) If using SSH and access is denied
-
-Create and add an SSH key:
-
-```bash
-ssh-keygen -t ed25519 -C "you@example.com"
-cat ~/.ssh/id_ed25519.pub
-```
-
-Add the public key to GitHub → **Settings → SSH and GPG keys**, then test:
-
-```bash
-ssh -T git@github.com
-```
-
-### 6) Corporate network/firewall issues
-
-If GitHub is blocked on your network, try a different network or configure your proxy:
-
-```bash
-git config --global http.proxy http://<proxy-host>:<proxy-port>
-git config --global https.proxy http://<proxy-host>:<proxy-port>
-```
-
-To unset proxy settings later:
-
-```bash
-git config --global --unset http.proxy
-git config --global --unset https.proxy
-```
