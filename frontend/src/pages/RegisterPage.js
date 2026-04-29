@@ -15,7 +15,19 @@ export default function RegisterPage() {
       setMessage("Registration successful. Please login.");
       setTimeout(() => navigate("/login"), 800);
     } catch (err) {
-      setMessage(err.response?.data?.message || "Registration failed");
+      const serverMessage = err.response?.data?.message;
+      const serverError = err.response?.data?.error;
+      if (serverMessage || serverError) {
+        setMessage(serverError ? `${serverMessage || "Request failed"}: ${serverError}` : serverMessage);
+        return;
+      }
+
+      if (err.code === "ERR_NETWORK") {
+        setMessage("Cannot connect to backend API. Verify backend is running on port 5000.");
+        return;
+      }
+
+      setMessage(`Registration failed${err.response?.status ? ` (HTTP ${err.response.status})` : ""}. Please check backend logs.`);
     }
   };
 
