@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from models import db, Transaction, TransactionType
 from services.transaction_service import create_transaction
 from utils.decorators import roles_required
@@ -32,7 +32,7 @@ def serialize_transaction(t):
 @transaction_bp.get("")
 @jwt_required()
 def list_transactions():
-    transactions = Transaction.query.order_by(Transaction.transaction_timestamp.desc()).all()
+    transactions = Transaction.query.filter_by(company_id=get_jwt().get("company_id")).order_by(Transaction.transaction_timestamp.desc()).all()
     return jsonify([serialize_transaction(t) for t in transactions])
 
 
@@ -46,7 +46,7 @@ def add_transaction():
         return error
 
     try:
-        transaction = create_transaction(payload, int(get_jwt_identity()))
+        transaction = create_transaction(payload, int(get_jwt_identity()), get_jwt().get("company_id"))
         return jsonify(serialize_transaction(transaction)), 201
     except ValueError as err:
         return jsonify({"message": str(err)}), 400
@@ -58,7 +58,7 @@ def add_transaction():
 @jwt_required()
 @roles_required("admin", "accountant")
 def update_transaction(transaction_id):
-    transaction = Transaction.query.get_or_404(transaction_id)
+    transaction = Transaction.query.filter_by(id=transaction_id, company_id=get_jwt().get("company_id")).first_or_404()
     payload = request.get_json() or {}
 
     if "transaction_type" in payload:
@@ -84,7 +84,7 @@ def update_transaction(transaction_id):
 @jwt_required()
 @roles_required("admin")
 def delete_transaction(transaction_id):
-    transaction = Transaction.query.get_or_404(transaction_id)
+    transaction = Transaction.query.filter_by(id=transaction_id, company_id=get_jwt().get("company_id")).first_or_404()
     db.session.delete(transaction)
     db.session.commit()
     return jsonify({"message": "Transaction deleted successfully"})

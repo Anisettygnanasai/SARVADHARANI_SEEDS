@@ -4,7 +4,7 @@ import { register, requestRegisterOtp } from "../services/authService";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ full_name: "", email: "", password: "", role: "accountant" });
+  const [form, setForm] = useState({ full_name: "", email: "", password: "", company_code: "", company_name: "" });
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [message, setMessage] = useState("");
@@ -25,7 +25,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setMessage("");
     try {
-      await register({ email: form.email, otp });
+      await register({ email: form.email, otp, company_code: form.company_code });
       setMessage("Registration successful. Please login.");
       setTimeout(() => navigate("/login"), 800);
     } catch (err) {
@@ -41,10 +41,8 @@ export default function RegisterPage() {
         <input className="input-premium mb-3" placeholder="Full Name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} disabled={otpSent} />
         <input className="input-premium mb-3" placeholder="Email (gmail/yahoo)" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} disabled={otpSent} />
         <input className="input-premium mb-3" type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} disabled={otpSent} />
-        <select className="input-premium mb-3" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} disabled={otpSent}>
-          <option value="accountant">Accountant</option>
-          <option value="admin">Admin</option>
-        </select>
+        <input className="input-premium mb-3" placeholder="Company Code (e.g. ACME01)" value={form.company_code} onChange={(e) => setForm({ ...form, company_code: e.target.value })} disabled={otpSent} />
+        <input className="input-premium mb-3" placeholder="Company Name" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} disabled={otpSent} />
         {otpSent && <input className="input-premium mb-3" placeholder="Enter 6-digit OTP" value={otp} onChange={(e) => setOtp(e.target.value)} />}
         <button className="btn-primary w-full">{otpSent ? "Verify OTP & Create Account" : "Send OTP"}</button>
         <p className="mt-3 text-sm">Have account? <Link className="font-medium text-blue-600" to="/login">Login</Link></p>
