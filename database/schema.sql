@@ -50,6 +50,34 @@ BEFORE UPDATE ON users
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
+-- ===== Admin Invites =====
+CREATE TABLE IF NOT EXISTS admin_invites (
+    id              BIGSERIAL PRIMARY KEY,
+    email           VARCHAR(255) NOT NULL,
+    token           VARCHAR(255) NOT NULL UNIQUE,
+    created_by      BIGINT REFERENCES users(id),
+    expires_at      TIMESTAMPTZ NOT NULL,
+    used            BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_invites_email ON admin_invites (email);
+CREATE INDEX IF NOT EXISTS idx_admin_invites_expires_at ON admin_invites (expires_at);
+
+-- ===== OTP Verifications =====
+CREATE TABLE IF NOT EXISTS otp_verifications (
+    id              BIGSERIAL PRIMARY KEY,
+    email           VARCHAR(255) NOT NULL,
+    otp             VARCHAR(6) NOT NULL,
+    purpose         VARCHAR(40) NOT NULL,
+    expires_at      TIMESTAMPTZ NOT NULL,
+    verified        BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_otp_verifications_email_purpose ON otp_verifications (email, purpose);
+CREATE INDEX IF NOT EXISTS idx_otp_verifications_expires_at ON otp_verifications (expires_at);
+
 -- ===== Ledgers =====
 CREATE TABLE IF NOT EXISTS ledgers (
     id                  BIGSERIAL PRIMARY KEY,
