@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from models import db, StockItem, StockHistory, StockMovementType
 from utils.decorators import roles_required
 from utils.validators import require_fields, parse_decimal
@@ -24,7 +24,7 @@ def serialize_stock(item):
 @stock_bp.get("")
 @jwt_required()
 def list_stock_items():
-    items = StockItem.query.order_by(StockItem.id.desc()).all()
+    items = StockItem.query.filter_by(company_id=get_jwt().get("company_id")).order_by(StockItem.id.desc()).all()
     return jsonify([serialize_stock(i) for i in items])
 
 
@@ -53,6 +53,7 @@ def create_stock_item():
         unit_price=price,
         reorder_level=reorder_level,
         created_by_user_id=int(get_jwt_identity()),
+        company_id=get_jwt().get("company_id"),
     )
     db.session.add(item)
     db.session.flush()
@@ -67,6 +68,7 @@ def create_stock_item():
             unit_price=price,
             notes="Opening stock",
             created_by_user_id=int(get_jwt_identity()),
+        company_id=get_jwt().get("company_id"),
         )
     )
 
@@ -78,7 +80,7 @@ def create_stock_item():
 @jwt_required()
 @roles_required("admin", "accountant")
 def update_stock_item(stock_id):
-    item = StockItem.query.get_or_404(stock_id)
+    item = StockItem.query.filter_by(id=stock_id, company_id=get_jwt().get("company_id")).first_or_404()
     payload = request.get_json() or {}
 
     if "name" in payload:
@@ -105,7 +107,7 @@ def update_stock_item(stock_id):
 @jwt_required()
 @roles_required("admin")
 def delete_stock_item(stock_id):
-    item = StockItem.query.get_or_404(stock_id)
+    item = StockItem.query.filter_by(id=stock_id, company_id=get_jwt().get("company_id")).first_or_404()
     db.session.delete(item)
     db.session.commit()
     return jsonify({"message": "Stock item deleted successfully"})
@@ -114,7 +116,7 @@ def delete_stock_item(stock_id):
 @stock_bp.get("/<int:stock_id>/history")
 @jwt_required()
 def stock_history(stock_id):
-    history = StockHistory.query.filter_by(stock_item_id=stock_id).order_by(StockHistory.created_at.desc()).all()
+    history = StockHistory.query.filter_by(stock_item_id=stock_id, company_id=get_jwt().get("company_id")).order_by(StockHistory.created_at.desc()).all()
     result = [
         {
             "id": h.id,

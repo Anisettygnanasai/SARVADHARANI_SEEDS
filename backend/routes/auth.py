@@ -8,7 +8,7 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import create_access_token
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from models import User, UserRole, db
+from models import Company, User, UserRole, db
 from utils.validators import require_fields
 
 ALLOWED_EMAIL_DOMAINS = {
@@ -85,14 +85,15 @@ def _verify_otp(purpose: str, email: str, otp: str):
 @auth_bp.post("/register/request-otp")
 def request_registration_otp():
     payload = request.get_json() or {}
-    error = require_fields(payload, ["full_name", "email", "password", "role"])
+    error = require_fields(payload, ["full_name", "email", "password", "company_code", "company_name"])
     if error:
         return error
 
     full_name = payload["full_name"].strip()
     email = payload["email"].strip().lower()
     password = payload["password"]
-    role_value = payload["role"]
+    company_code = payload["company_code"].strip().upper()
+    company_name = payload["company_name"].strip()
 
     if len(full_name) < 3:
         return jsonify({"message": "Full name must be at least 3 characters"}), 400
@@ -102,16 +103,20 @@ def request_registration_otp():
         return jsonify({"message": "Only Google and Yahoo email addresses are allowed"}), 400
     if len(password) < 8:
         return jsonify({"message": "Password must be at least 8 characters"}), 400
-    if role_value not in ["admin", "accountant"]:
-        return jsonify({"message": "Invalid role"}), 400
+    if len(company_code) < 3:
+        return jsonify({"message": "Company code must be at least 3 characters"}), 400
 
-    if User.query.filter_by(email=email).first():
+    company = Company.query.filter_by(company_code=company_code).first()
+    if company and company.company_name.lower() != company_name.lower():
+        return jsonify({"message": "Company code already exists with a different name"}), 409
+
+    if User.query.filter_by(email=email, company_id=company.id if company else None).first():
         return jsonify({"message": "Email already registered"}), 409
 
     otp = _generate_otp()
     try:
         _send_email_otp(email, otp, "registration")
-        _set_otp("register", email, otp, payload={"full_name": full_name, "password": password, "role": role_value})
+        _set_otp("register", email, otp, payload={"full_name": full_name, "password": password, "company_code": company_code, "company_name": company_name})
     except Exception as exc:
         return jsonify({"message": "Failed to send OTP", "error": str(exc)}), 500
 
@@ -121,12 +126,13 @@ def request_registration_otp():
 @auth_bp.post("/register")
 def register():
     payload = request.get_json() or {}
-    error = require_fields(payload, ["email", "otp"])
+    error = require_fields(payload, ["email", "otp", "company_code"])
     if error:
         return error
 
     email = payload["email"].strip().lower()
     otp = payload["otp"].strip()
+    company_code = payload["company_code"].strip().upper()
 
     valid, result = _verify_otp("register", email, otp)
     if not valid:
@@ -135,7 +141,13 @@ def register():
     register_payload = result["payload"]
 
     try:
-        if User.query.filter_by(email=email).first():
+        company = Company.query.filter_by(company_code=company_code).first()
+        if not company:
+            company = Company(company_code=company_code, company_name=register_payload["company_name"])
+            db.session.add(company)
+            db.session.flush()
+
+        if User.query.filter_by(email=email, company_id=company.id).first():
             OTP_STORE.pop(("register", email), None)
             return jsonify({"message": "Email already registered"}), 409
 
@@ -144,7 +156,8 @@ def register():
             full_name=register_payload["full_name"],
             email=email,
             password_hash=password_hash,
-            role=UserRole(register_payload["role"]),
+            role=UserRole.accountant,
+            company_id=company.id,
         )
 
         db.session.add(user)
@@ -163,12 +176,17 @@ def register():
 @auth_bp.post("/forgot-password/request-otp")
 def forgot_password_request_otp():
     payload = request.get_json() or {}
-    error = require_fields(payload, ["email"])
+    error = require_fields(payload, ["email", "company_code"])
     if error:
         return error
 
     email = payload["email"].strip().lower()
-    user = User.query.filter_by(email=email).first()
+    company_code = payload["company_code"].strip().upper()
+    company = Company.query.filter_by(company_code=company_code).first()
+    if not company:
+        return jsonify({"message": "Company not found"}), 404
+
+    user = User.query.filter_by(email=email, company_id=company.id).first()
     if not user:
         return jsonify({"message": "User not found"}), 404
 
@@ -185,13 +203,15 @@ def forgot_password_request_otp():
 @auth_bp.post("/forgot-password/verify-otp")
 def forgot_password_verify_otp():
     payload = request.get_json() or {}
-    error = require_fields(payload, ["email", "otp", "new_password"])
+    error = require_fields(payload, ["email", "otp", "new_password", "company_code"])
     if error:
         return error
 
     email = payload["email"].strip().lower()
     otp = payload["otp"].strip()
+    company_code = payload["company_code"].strip().upper()
     new_password = payload["new_password"]
+    company_code = payload["company_code"].strip().upper()
 
     if len(new_password) < 8:
         return jsonify({"message": "Password must be at least 8 characters"}), 400
@@ -200,7 +220,12 @@ def forgot_password_verify_otp():
     if not valid:
         return jsonify({"message": result}), 400
 
-    user = User.query.filter_by(email=email).first()
+    company_code = payload["company_code"].strip().upper()
+    company = Company.query.filter_by(company_code=company_code).first()
+    if not company:
+        return jsonify({"message": "Company not found"}), 404
+
+    user = User.query.filter_by(email=email, company_id=company.id).first()
     if not user:
         return jsonify({"message": "User not found"}), 404
 
@@ -218,16 +243,21 @@ def forgot_password_verify_otp():
 @auth_bp.post("/login")
 def login():
     payload = request.get_json() or {}
-    error = require_fields(payload, ["email", "password"])
+    error = require_fields(payload, ["email", "password", "company_code"])
     if error:
         return error
 
-    user = User.query.filter_by(email=payload["email"].strip().lower()).first()
+    company_code = payload["company_code"].strip().upper()
+    company = Company.query.filter_by(company_code=company_code).first()
+    if not company:
+        return jsonify({"message": "Invalid credentials"}), 401
+
+    user = User.query.filter_by(email=payload["email"].strip().lower(), company_id=company.id).first()
     if not user or not bcrypt.checkpw(payload["password"].encode("utf-8"), user.password_hash.encode("utf-8")):
         return jsonify({"message": "Invalid credentials"}), 401
 
     if not user.is_active:
         return jsonify({"message": "User is inactive"}), 403
 
-    token = create_access_token(identity=str(user.id), additional_claims={"role": user.role.value})
-    return jsonify({"access_token": token, "user": {"id": user.id, "full_name": user.full_name, "email": user.email, "role": user.role.value}}), 200
+    token = create_access_token(identity=str(user.id), additional_claims={"role": user.role.value, "company_id": user.company_id, "company_code": company.company_code})
+    return jsonify({"access_token": token, "user": {"id": user.id, "full_name": user.full_name, "email": user.email, "role": user.role.value, "company_id": user.company_id, "company_code": company.company_code, "company_name": company.company_name}}), 200

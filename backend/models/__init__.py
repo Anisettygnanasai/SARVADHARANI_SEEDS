@@ -35,12 +35,22 @@ class TimestampMixin:
     updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
 
+class Company(db.Model, TimestampMixin):
+    __tablename__ = "companies"
+
+    id = db.Column(db.BigInteger, primary_key=True)
+    company_code = db.Column(db.String(50), nullable=False, unique=True)
+    company_name = db.Column(db.String(180), nullable=False)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+
+
 class User(db.Model, TimestampMixin):
     __tablename__ = "users"
 
     id = db.Column(db.BigInteger, primary_key=True)
+    company_id = db.Column(db.BigInteger, db.ForeignKey("companies.id"), nullable=False)
     full_name = db.Column(db.String(120), nullable=False)
-    email = db.Column(db.String(255), nullable=False, unique=True)
+    email = db.Column(db.String(255), nullable=False)
     password_hash = db.Column(db.Text, nullable=False)
     role = db.Column(db.Enum(UserRole, name="user_role"), nullable=False, default=UserRole.accountant)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
@@ -50,8 +60,9 @@ class Ledger(db.Model, TimestampMixin):
     __tablename__ = "ledgers"
 
     id = db.Column(db.BigInteger, primary_key=True)
+    company_id = db.Column(db.BigInteger, db.ForeignKey("companies.id"), nullable=False)
     name = db.Column(db.String(180), nullable=False)
-    ledger_code = db.Column(db.String(50), nullable=False, unique=True)
+    ledger_code = db.Column(db.String(50), nullable=False)
     ledger_type = db.Column(db.Enum(LedgerType, name="ledger_type"), nullable=False)
     opening_balance = db.Column(db.Numeric(18, 2), nullable=False, default=0)
     current_balance = db.Column(db.Numeric(18, 2), nullable=False, default=0)
@@ -67,7 +78,8 @@ class StockItem(db.Model, TimestampMixin):
     __tablename__ = "stock_items"
 
     id = db.Column(db.BigInteger, primary_key=True)
-    sku = db.Column(db.String(80), nullable=False, unique=True)
+    company_id = db.Column(db.BigInteger, db.ForeignKey("companies.id"), nullable=False)
+    sku = db.Column(db.String(80), nullable=False)
     name = db.Column(db.String(180), nullable=False)
     description = db.Column(db.Text)
     unit = db.Column(db.String(30), nullable=False, default="pcs")
@@ -82,7 +94,8 @@ class Transaction(db.Model, TimestampMixin):
     __tablename__ = "transactions"
 
     id = db.Column(db.BigInteger, primary_key=True)
-    transaction_number = db.Column(db.String(60), nullable=False, unique=True)
+    company_id = db.Column(db.BigInteger, db.ForeignKey("companies.id"), nullable=False)
+    transaction_number = db.Column(db.String(60), nullable=False)
     transaction_type = db.Column(db.Enum(TransactionType, name="transaction_type"), nullable=False)
     ledger_id = db.Column(db.BigInteger, db.ForeignKey("ledgers.id"), nullable=False)
     total_amount = db.Column(db.Numeric(18, 2), nullable=False)
@@ -112,6 +125,7 @@ class StockHistory(db.Model):
     __tablename__ = "stock_history"
 
     id = db.Column(db.BigInteger, primary_key=True)
+    company_id = db.Column(db.BigInteger, db.ForeignKey("companies.id"), nullable=False)
     stock_item_id = db.Column(db.BigInteger, db.ForeignKey("stock_items.id"), nullable=False)
     transaction_id = db.Column(db.BigInteger, db.ForeignKey("transactions.id", ondelete="SET NULL"))
     movement_type = db.Column(db.Enum(StockMovementType, name="stock_movement_type"), nullable=False)
