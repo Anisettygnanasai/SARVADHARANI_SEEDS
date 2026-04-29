@@ -15,9 +15,10 @@ export default function RegisterPage() {
       setMessage("Registration successful. Please login.");
       setTimeout(() => navigate("/login"), 800);
     } catch (err) {
-      const serverMessage = err.response?.data?.message || err.response?.data?.error;
-      if (serverMessage) {
-        setMessage(serverMessage);
+      const serverMessage = err.response?.data?.message;
+      const serverError = err.response?.data?.error;
+      if (serverMessage || serverError) {
+        setMessage(serverError ? `${serverMessage || "Request failed"}: ${serverError}` : serverMessage);
         return;
       }
 
