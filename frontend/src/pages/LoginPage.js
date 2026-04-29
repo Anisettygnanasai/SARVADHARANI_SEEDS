@@ -28,6 +28,7 @@ export default function LoginPage({ onLogin }) {
         <input className="mb-3 w-full rounded border px-3 py-2" type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         <button className="w-full rounded bg-blue-600 px-3 py-2 text-white">Sign In</button>
         <p className="mt-3 text-sm">No account? <Link className="text-blue-600" to="/register">Register</Link></p>
+        <p className="mt-2 text-sm"><Link className="text-blue-600" to="/forgot-password">Forgot password?</Link></p>
       </form>
     </div>
   );

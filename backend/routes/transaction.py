@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import Transaction
+from models import db, Transaction, TransactionType
 from services.transaction_service import create_transaction
 from utils.decorators import roles_required
-from utils.validators import require_fields
+from utils.validators import require_fields, parse_decimal
 
 transaction_bp = Blueprint("transaction", __name__, url_prefix="/api/transactions")
 
@@ -52,3 +52,39 @@ def add_transaction():
         return jsonify({"message": str(err)}), 400
     except Exception:
         return jsonify({"message": "Failed to create transaction"}), 500
+
+
+@transaction_bp.put("/<int:transaction_id>")
+@jwt_required()
+@roles_required("admin", "accountant")
+def update_transaction(transaction_id):
+    transaction = Transaction.query.get_or_404(transaction_id)
+    payload = request.get_json() or {}
+
+    if "transaction_type" in payload:
+        try:
+            transaction.transaction_type = TransactionType(payload["transaction_type"])
+        except ValueError:
+            return jsonify({"message": "Invalid transaction type"}), 400
+    if "ledger_id" in payload:
+        transaction.ledger_id = payload["ledger_id"]
+    if "total_amount" in payload:
+        try:
+            transaction.total_amount = parse_decimal(payload["total_amount"], "total_amount")
+        except ValueError as err:
+            return jsonify({"message": str(err)}), 400
+    if "notes" in payload:
+        transaction.notes = payload["notes"]
+
+    db.session.commit()
+    return jsonify(serialize_transaction(transaction))
+
+
+@transaction_bp.delete("/<int:transaction_id>")
+@jwt_required()
+@roles_required("admin")
+def delete_transaction(transaction_id):
+    transaction = Transaction.query.get_or_404(transaction_id)
+    db.session.delete(transaction)
+    db.session.commit()
+    return jsonify({"message": "Transaction deleted successfully"})
