@@ -90,3 +90,30 @@ CREATE TABLE IF NOT EXISTS stock_history (
     unit_price NUMERIC(18,2) NOT NULL DEFAULT 0, notes TEXT,
     created_by_user_id BIGINT NOT NULL REFERENCES users(id), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+
+CREATE TABLE IF NOT EXISTS admin_invites (
+ id BIGSERIAL PRIMARY KEY,
+ company_id BIGINT NOT NULL REFERENCES companies(id),
+ email VARCHAR(255) NOT NULL,
+ token VARCHAR(255) UNIQUE NOT NULL,
+ created_by BIGINT REFERENCES users(id),
+ expires_at TIMESTAMPTZ NOT NULL,
+ used BOOLEAN NOT NULL DEFAULT FALSE,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS otp_verifications (
+ id BIGSERIAL PRIMARY KEY,
+ company_id BIGINT NOT NULL REFERENCES companies(id),
+ email VARCHAR(255) NOT NULL,
+ otp VARCHAR(6) NOT NULL,
+ purpose VARCHAR(40) NOT NULL,
+ expires_at TIMESTAMPTZ NOT NULL,
+ verified BOOLEAN NOT NULL DEFAULT FALSE,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO companies (company_code, company_name, is_active)
+VALUES ('ANITS1', 'Anil Neerukonda Institute of Technology and Science', TRUE)
+ON CONFLICT (company_code) DO NOTHING;
