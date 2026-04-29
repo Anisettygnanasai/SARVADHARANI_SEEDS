@@ -20,14 +20,16 @@ export default function LoginPage({ onLogin }) {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <form onSubmit={submit} className="w-full max-w-md rounded-lg bg-white p-6 shadow">
-        <h2 className="mb-4 text-xl font-bold">Login</h2>
-        {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
-        <input className="mb-3 w-full rounded border px-3 py-2" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-        <input className="mb-3 w-full rounded border px-3 py-2" type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-        <button className="w-full rounded bg-blue-600 px-3 py-2 text-white">Sign In</button>
-        <p className="mt-3 text-sm">No account? <Link className="text-blue-600" to="/register">Register</Link></p>
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <form onSubmit={submit} className="glass-card w-full max-w-md p-6 md:p-7">
+        <h2 className="mb-1 text-2xl font-bold">Welcome back</h2>
+        <p className="mb-4 text-sm text-slate-500">Sign in to continue your accounting workflow.</p>
+        {error && <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+        <input className="input-premium mb-3" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+        <input className="input-premium mb-3" type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        <button className="btn-primary w-full">Sign In</button>
+        <p className="mt-3 text-sm">No account? <Link className="font-medium text-blue-600" to="/register">Register</Link></p>
+        <p className="mt-2 text-sm"><Link className="font-medium text-blue-600" to="/forgot-password">Forgot password?</Link></p>
       </form>
     </div>
   );
