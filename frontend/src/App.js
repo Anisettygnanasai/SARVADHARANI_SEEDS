@@ -7,6 +7,7 @@ import DashboardPage from "./pages/DashboardPage";
 import LedgersPage from "./pages/LedgersPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import StockPage from "./pages/StockPage";
 import TransactionsPage from "./pages/TransactionsPage";
 
@@ -26,6 +27,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage onLogin={saveAuth} />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route
         path="/dashboard"
         element={
