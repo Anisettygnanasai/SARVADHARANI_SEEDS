@@ -1,4 +1,5 @@
 from flask import Flask, jsonify
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from sqlalchemy.exc import SQLAlchemyError
 from config import Config
@@ -12,6 +13,7 @@ def create_app():
 
     db.init_app(app)
     JWTManager(app)
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     for bp in ALL_BLUEPRINTS:
         app.register_blueprint(bp)

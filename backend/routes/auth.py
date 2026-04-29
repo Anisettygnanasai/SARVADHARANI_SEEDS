@@ -1,6 +1,7 @@
 import bcrypt
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from models import db, User, UserRole
 from utils.validators import require_fields
 
@@ -30,8 +31,15 @@ def register():
         role=UserRole(role_value),
     )
 
-    db.session.add(user)
-    db.session.commit()
+    try:
+        db.session.add(user)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"message": "Email already registered"}), 409
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"message": "Registration failed due to database error"}), 500
 
     return jsonify({"message": "User registered successfully"}), 201
 
