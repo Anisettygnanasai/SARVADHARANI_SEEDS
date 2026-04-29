@@ -33,19 +33,19 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <form onSubmit={otpSent ? resetPassword : requestOtp} className="w-full max-w-md rounded-lg bg-white p-6 shadow">
-        <h2 className="mb-4 text-xl font-bold">Forgot Password</h2>
-        {message && <p className="mb-2 text-sm">{message}</p>}
-        <input className="mb-3 w-full rounded border px-3 py-2" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={otpSent} />
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <form onSubmit={otpSent ? resetPassword : requestOtp} className="glass-card w-full max-w-md p-6 md:p-7">
+        <h2 className="mb-4 text-2xl font-bold">Reset password</h2>
+        {message && <p className="mb-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-slate-700">{message}</p>}
+        <input className="input-premium mb-3" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={otpSent} />
         {otpSent && (
           <>
-            <input className="mb-3 w-full rounded border px-3 py-2" placeholder="6-digit OTP" value={otp} onChange={(e) => setOtp(e.target.value)} />
-            <input className="mb-3 w-full rounded border px-3 py-2" type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+            <input className="input-premium mb-3" placeholder="6-digit OTP" value={otp} onChange={(e) => setOtp(e.target.value)} />
+            <input className="input-premium mb-3" type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
           </>
         )}
-        <button className="w-full rounded bg-blue-600 px-3 py-2 text-white">{otpSent ? "Reset Password" : "Send OTP"}</button>
-        <p className="mt-3 text-sm"><Link className="text-blue-600" to="/login">Back to Login</Link></p>
+        <button className="btn-primary w-full">{otpSent ? "Reset Password" : "Send OTP"}</button>
+        <p className="mt-3 text-sm"><Link className="font-medium text-blue-600" to="/login">Back to Login</Link></p>
       </form>
     </div>
   );

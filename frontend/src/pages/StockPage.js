@@ -30,19 +30,19 @@ export default function StockPage() {
   };
 
   const actions = [
-    { label: "Edit", className: "rounded bg-amber-500 px-2 py-1 text-white", onClick: startEdit },
-    ...(isAdmin ? [{ label: "Delete", className: "rounded bg-red-600 px-2 py-1 text-white", onClick: async (row) => { await deleteStock(row.id); load(); } }] : []),
+    { label: "Edit", className: "btn-edit text-sm", onClick: startEdit },
+    ...(isAdmin ? [{ label: "Delete", className: "btn-danger text-sm", onClick: async (row) => { await deleteStock(row.id); load(); } }] : []),
   ];
 
   return (
     <div className="space-y-4">
-      <form onSubmit={submit} className="grid grid-cols-1 gap-3 rounded-lg bg-white p-4 shadow md:grid-cols-5">
-        <input className="rounded border px-3 py-2" placeholder="SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} disabled={Boolean(editing)} />
-        <input className="rounded border px-3 py-2" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <input type="number" className="rounded border px-3 py-2" placeholder="Quantity" value={form.quantity_on_hand} onChange={(e) => setForm({ ...form, quantity_on_hand: e.target.value })} disabled={Boolean(editing)} />
-        <input type="number" className="rounded border px-3 py-2" placeholder="Unit Price" value={form.unit_price} onChange={(e) => setForm({ ...form, unit_price: e.target.value })} />
-        <input className="rounded border px-3 py-2" placeholder="Unit" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} />
-        <button className="rounded bg-blue-600 px-3 py-2 text-white md:col-span-5">{editing ? "Update Stock" : "Save Stock"}</button>
+      <form onSubmit={submit} className="glass-card grid grid-cols-1 gap-3 p-4 md:p-5 md:grid-cols-5">
+        <input className="input-premium" placeholder="SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} disabled={Boolean(editing)} />
+        <input className="input-premium" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <input type="number" className="input-premium" placeholder="Quantity" value={form.quantity_on_hand} onChange={(e) => setForm({ ...form, quantity_on_hand: e.target.value })} disabled={Boolean(editing)} />
+        <input type="number" className="input-premium" placeholder="Unit Price" value={form.unit_price} onChange={(e) => setForm({ ...form, unit_price: e.target.value })} />
+        <input className="input-premium" placeholder="Unit" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} />
+        <button className="btn-primary md:col-span-5">{editing ? "Update Stock" : "Save Stock"}</button>
       </form>
       <DataTable rows={rows} columns={[{ key: "sku", title: "SKU" }, { key: "name", title: "Name" }, { key: "quantity_on_hand", title: "Qty" }, { key: "unit_price", title: "Unit Price" }]} filterKey="unit" actions={actions} />
     </div>

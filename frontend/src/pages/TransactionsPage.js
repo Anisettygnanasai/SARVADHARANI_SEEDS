@@ -38,19 +38,19 @@ export default function TransactionsPage() {
   };
 
   const actions = [
-    { label: "Edit", className: "rounded bg-amber-500 px-2 py-1 text-white", onClick: startEdit },
-    ...(isAdmin ? [{ label: "Delete", className: "rounded bg-red-600 px-2 py-1 text-white", onClick: async (row) => { await deleteTransaction(row.id); load(); } }] : []),
+    { label: "Edit", className: "btn-edit text-sm", onClick: startEdit },
+    ...(isAdmin ? [{ label: "Delete", className: "btn-danger text-sm", onClick: async (row) => { await deleteTransaction(row.id); load(); } }] : []),
   ];
 
   return (
     <div className="space-y-4">
-      <form onSubmit={submit} className="grid grid-cols-1 gap-3 rounded-lg bg-white p-4 shadow md:grid-cols-4">
-        <input className="rounded border px-3 py-2" placeholder="Transaction No" value={form.transaction_number} onChange={(e) => setForm({ ...form, transaction_number: e.target.value })} disabled={Boolean(editing)} />
-        <select className="rounded border px-3 py-2" value={form.transaction_type} onChange={(e) => setForm({ ...form, transaction_type: e.target.value })}><option value="sales">Sales</option><option value="purchase">Purchase</option><option value="payment">Payment</option><option value="receipt">Receipt</option></select>
-        <select className="rounded border px-3 py-2" value={form.ledger_id} onChange={(e) => setForm({ ...form, ledger_id: e.target.value })}><option value="">Select Ledger</option>{ledgers.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select>
-        <input type="number" className="rounded border px-3 py-2" placeholder="Total Amount" value={form.total_amount} onChange={(e) => setForm({ ...form, total_amount: e.target.value })} />
-        {!editing && <><select className="rounded border px-3 py-2" value={form.stock_item_id} onChange={(e) => setForm({ ...form, stock_item_id: e.target.value })}><option value="">Select Stock</option>{stocks.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select><input type="number" className="rounded border px-3 py-2" placeholder="Qty" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /><input type="number" className="rounded border px-3 py-2" placeholder="Unit Price" value={form.unit_price} onChange={(e) => setForm({ ...form, unit_price: e.target.value })} /></>}
-        <button className="rounded bg-blue-600 px-3 py-2 text-white">{editing ? "Update Transaction" : "Save Transaction"}</button>
+      <form onSubmit={submit} className="glass-card grid grid-cols-1 gap-3 p-4 md:p-5 md:grid-cols-4">
+        <input className="input-premium" placeholder="Transaction No" value={form.transaction_number} onChange={(e) => setForm({ ...form, transaction_number: e.target.value })} disabled={Boolean(editing)} />
+        <select className="input-premium" value={form.transaction_type} onChange={(e) => setForm({ ...form, transaction_type: e.target.value })}><option value="sales">Sales</option><option value="purchase">Purchase</option><option value="payment">Payment</option><option value="receipt">Receipt</option></select>
+        <select className="input-premium" value={form.ledger_id} onChange={(e) => setForm({ ...form, ledger_id: e.target.value })}><option value="">Select Ledger</option>{ledgers.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select>
+        <input type="number" className="input-premium" placeholder="Total Amount" value={form.total_amount} onChange={(e) => setForm({ ...form, total_amount: e.target.value })} />
+        {!editing && <><select className="input-premium" value={form.stock_item_id} onChange={(e) => setForm({ ...form, stock_item_id: e.target.value })}><option value="">Select Stock</option>{stocks.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select><input type="number" className="input-premium" placeholder="Qty" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /><input type="number" className="input-premium" placeholder="Unit Price" value={form.unit_price} onChange={(e) => setForm({ ...form, unit_price: e.target.value })} /></>}
+        <button className="btn-primary">{editing ? "Update Transaction" : "Save Transaction"}</button>
       </form>
       <DataTable rows={rows} columns={[{ key: "transaction_number", title: "Number" }, { key: "transaction_type", title: "Type" }, { key: "ledger_id", title: "Ledger" }, { key: "total_amount", title: "Amount" }]} filterKey="transaction_type" actions={actions} />
     </div>

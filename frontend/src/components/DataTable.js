@@ -19,41 +19,32 @@ export default function DataTable({ rows, columns, filterKey, actions, rowKey = 
   }, [rows, columns, query, filterKey, filterValue]);
 
   return (
-    <div className="rounded-lg bg-white p-4 shadow">
-      <div className="mb-3 flex flex-col gap-2 md:flex-row">
-        <input placeholder="Search..." value={query} onChange={(e) => setQuery(e.target.value)} className="w-full rounded border px-3 py-2" />
+    <div className="glass-card p-4 md:p-5">
+      <div className="mb-4 flex flex-col gap-2 md:flex-row">
+        <input placeholder="Search..." value={query} onChange={(e) => setQuery(e.target.value)} className="input-premium" />
         {filterKey && (
-          <select className="rounded border px-3 py-2" value={filterValue} onChange={(e) => setFilterValue(e.target.value)}>
+          <select className="input-premium md:max-w-40" value={filterValue} onChange={(e) => setFilterValue(e.target.value)}>
             <option value="all">All</option>
             {filterOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
           </select>
         )}
       </div>
-      <div className="overflow-auto">
+      <div className="overflow-auto rounded-xl border border-white/60 bg-white/70">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b bg-slate-50">
-              {columns.map((c) => <th key={c.key} className="px-3 py-2 text-left">{c.title}</th>)}
-              {actions?.length ? <th className="px-3 py-2 text-left">Actions</th> : null}
+            <tr className="border-b bg-slate-50/80 text-slate-700">
+              {columns.map((c) => <th key={c.key} className="px-3 py-3 text-left font-semibold">{c.title}</th>)}
+              {actions?.length ? <th className="px-3 py-3 text-left font-semibold">Actions</th> : null}
             </tr>
           </thead>
           <tbody>
             {filtered.map((row, idx) => (
-              <tr key={row[rowKey] ?? idx} className="border-b">
-                {columns.map((c) => <td key={c.key} className="px-3 py-2">{row[c.key]}</td>)}
+              <tr key={row[rowKey] ?? idx} className="border-b border-slate-100/80">
+                {columns.map((c) => <td key={c.key} className="px-3 py-2.5 text-slate-700">{row[c.key]}</td>)}
                 {actions?.length ? (
-                  <td className="px-3 py-2">
-                    <div className="flex gap-2">
-                      {actions.map((action) => (
-                        <button
-                          key={action.label}
-                          type="button"
-                          className={action.className ?? "rounded bg-slate-600 px-2 py-1 text-white"}
-                          onClick={() => action.onClick(row)}
-                        >
-                          {action.label}
-                        </button>
-                      ))}
+                  <td className="px-3 py-2.5">
+                    <div className="flex flex-wrap gap-2">
+                      {actions.map((action) => <button key={action.label} type="button" className={action.className ?? "btn-primary"} onClick={() => action.onClick(row)}>{action.label}</button>)}
                     </div>
                   </td>
                 ) : null}

@@ -11,23 +11,23 @@ const links = [
 export default function Navbar({ user, onLogout }) {
   const location = useLocation();
   return (
-    <header className="bg-white shadow-sm">
-      <div className="mx-auto flex max-w-7xl items-center justify-between p-4">
-        <h1 className="text-xl font-semibold">Accounting ERP</h1>
-        <nav className="flex gap-3">
+    <header className="sticky top-0 z-50 border-b border-white/60 bg-white/50 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <h1 className="text-xl font-semibold tracking-tight text-slate-800">Accounting ERP</h1>
+        <nav className="flex flex-wrap gap-2">
           {links.map((link) => (
             <Link
               key={link.to}
               to={link.to}
-              className={`rounded px-3 py-2 text-sm ${location.pathname === link.to ? "bg-blue-600 text-white" : "text-slate-700"}`}
+              className={`rounded-xl px-3 py-2 text-sm font-medium transition ${location.pathname === link.to ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-200" : "text-slate-700 hover:bg-white/70"}`}
             >
               {link.label}
             </Link>
           ))}
         </nav>
         <div className="flex items-center gap-3">
-          <span className="text-sm">{user?.full_name} ({user?.role})</span>
-          <button className="rounded bg-red-500 px-3 py-2 text-sm text-white" onClick={onLogout}>Logout</button>
+          <span className="rounded-xl bg-white/70 px-3 py-2 text-xs text-slate-700 md:text-sm">{user?.full_name} ({user?.role})</span>
+          <button className="btn-danger text-sm" onClick={onLogout}>Logout</button>
         </div>
       </div>
     </header>

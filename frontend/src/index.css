@@ -3,7 +3,30 @@
 @tailwind utilities;
 
 body {
-  @apply bg-slate-100 text-slate-800;
   margin: 0;
   font-family: Inter, system-ui, sans-serif;
+  background: radial-gradient(circle at 0% 0%, #dbeafe 0%, #eef2ff 35%, #f8fafc 100%);
+  color: #0f172a;
+}
+
+@layer components {
+  .glass-card {
+    @apply rounded-2xl border border-white/60 bg-white/65 shadow-xl shadow-slate-200/60 backdrop-blur-lg;
+  }
+
+  .input-premium {
+    @apply w-full rounded-xl border border-slate-200/80 bg-white/70 px-3 py-2.5 text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-200;
+  }
+
+  .btn-primary {
+    @apply rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 font-medium text-white shadow-md shadow-blue-300 transition hover:from-blue-700 hover:to-indigo-700 active:scale-[0.99];
+  }
+
+  .btn-danger {
+    @apply rounded-xl bg-gradient-to-r from-rose-500 to-red-600 px-3 py-2 text-white shadow-md shadow-rose-200 transition hover:from-rose-600 hover:to-red-700;
+  }
+
+  .btn-edit {
+    @apply rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-3 py-2 text-white shadow-md shadow-amber-200 transition hover:from-amber-500 hover:to-orange-600;
+  }
 }
