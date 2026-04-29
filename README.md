@@ -34,8 +34,8 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-export DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/erp_db"
-export JWT_SECRET_KEY="replace-with-secure-key"
+cp config.env.example .env
+# edit .env and set DB_PASSWORD to your real PostgreSQL password
 python app.py
 ```
 
@@ -74,4 +74,10 @@ If `npm start` shows `Could not find a required file: public/index.html`, ensure
 
 ## Database
 Run `database/schema.sql` first to create tables and enums.
+
+### DB password / connection notes
+- Do **not** hardcode your real PostgreSQL password in source files.
+- Set it in `backend/.env` as `DB_PASSWORD=...` (or in `DATABASE_URL`).
+- The backend reads these values via `load_dotenv()` in `backend/config.py`.
+- If your password is `Gnani@2005` (or `gnani@2005`), put that exact value in `.env` for `DB_PASSWORD`.
 
