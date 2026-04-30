@@ -5,6 +5,7 @@ export const fetchCompanies = () => api.get("/auth/companies");
 export const fetchAdminCompanies = () => api.get("/auth/admin/companies");
 export const createCompany = (payload) => api.post("/auth/admin/companies", payload);
 export const updateCompany = (companyCode, payload) => api.put(`/auth/admin/companies/${companyCode}`, payload);
+export const deleteCompany = (companyCode) => api.delete(`/auth/admin/companies/${companyCode}`);
 export const fetchPendingAccountants = () => api.get("/auth/admin/pending-accountants");
 export const approveAccountant = (payload) => api.post("/auth/admin/approve-accountant", payload);
 export const rejectAccountant = (payload) => api.post("/auth/admin/reject-accountant", payload);
