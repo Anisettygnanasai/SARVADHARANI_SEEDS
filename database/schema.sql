@@ -117,3 +117,23 @@ CREATE TABLE IF NOT EXISTS otp_verifications (
 INSERT INTO companies (company_code, company_name, is_active)
 VALUES ('ANITS1', 'Anil Neerukonda Institute of Technology and Science', TRUE)
 ON CONFLICT (company_code) DO NOTHING;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_approval_status') THEN
+        CREATE TYPE user_approval_status AS ENUM ('pending', 'approved', 'rejected');
+    END IF;
+END $$;
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_main_admin BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS approval_status user_approval_status NOT NULL DEFAULT 'pending';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_by BIGINT REFERENCES users(id);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_users_company_approval ON users(company_id, approval_status);
+
+INSERT INTO users (company_id, full_name, email, password_hash, role, is_active, is_main_admin, approval_status)
+SELECT c.id, 'Company Main Admin', 'mainadmin@anits.com', '$2b$12$m.AXnS//vLToPiVYWFY55uVIjZRMxNqT2v5SmJefsDuCJYAPwl7p.', 'admin', TRUE, TRUE, 'approved'
+FROM companies c
+WHERE c.company_code = 'ANITS1'
+ON CONFLICT DO NOTHING;

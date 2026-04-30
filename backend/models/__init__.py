@@ -43,6 +43,12 @@ class Company(db.Model, TimestampMixin):
     is_active = db.Column(db.Boolean, nullable=False, default=True)
 
 
+class UserApprovalStatus(enum.Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+
+
 class User(db.Model, TimestampMixin):
     __tablename__ = "users"
     id = db.Column(db.BigInteger, primary_key=True)
@@ -52,6 +58,10 @@ class User(db.Model, TimestampMixin):
     password_hash = db.Column(db.Text, nullable=False)
     role = db.Column(db.Enum(UserRole, name="user_role"), nullable=False, default=UserRole.accountant)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
+    is_main_admin = db.Column(db.Boolean, nullable=False, default=False)
+    approval_status = db.Column(db.Enum(UserApprovalStatus, name="user_approval_status"), nullable=False, default=UserApprovalStatus.pending)
+    approved_by = db.Column(db.BigInteger, db.ForeignKey("users.id"))
+    approved_at = db.Column(db.DateTime(timezone=True))
 
 
 class AdminInvite(db.Model):
