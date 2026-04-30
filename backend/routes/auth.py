@@ -21,31 +21,47 @@ def _ensure_gmail(email: str):
 
 def _generate_otp() -> str: return f"{random.randint(0, 999999):06d}"
 
-def _send_email_otp(to_email: str, otp: str, purpose: str):
-    sender = current_app.config.get("MAIL_USERNAME"); password = current_app.config.get("MAIL_PASSWORD")
-    host = current_app.config.get("MAIL_SERVER", "smtp.gmail.com"); port = int(current_app.config.get("MAIL_PORT", 587)); use_tls = bool(current_app.config.get("MAIL_USE_TLS", True))
-    logger.info("MAIL_USERNAME configured: %s", bool(sender))
-    if not sender or not password: raise ValueError("Email service not configured. Set MAIL_USERNAME and MAIL_PASSWORD.")
-    msg = EmailMessage(); msg["Subject"] = f"Your ERP {purpose} OTP"; msg["From"] = sender; msg["To"] = to_email
-    msg.set_content(f"Your OTP is {otp}. It will expire in {OTP_TTL_MINUTES} minutes.")
+
+
+def _smtp_send_message(msg: EmailMessage):
+    sender = current_app.config.get("MAIL_USERNAME")
+    password = current_app.config.get("MAIL_PASSWORD")
+    host = current_app.config.get("MAIL_SERVER", "smtp.gmail.com")
+    port = int(current_app.config.get("MAIL_PORT", 587))
+    use_tls = current_app.config.get("MAIL_USE_TLS", True)
+    use_ssl = current_app.config.get("MAIL_USE_SSL", False)
+
+    logger.info("Mail config host=%s port=%s tls=%s ssl=%s username_set=%s", host, port, use_tls, use_ssl, bool(sender))
+
+    if not sender or not password:
+        raise ValueError("Email service not configured. Set MAIL_USERNAME and MAIL_PASSWORD (Gmail app password).")
+
+    if use_ssl:
+        with smtplib.SMTP_SSL(host, port, timeout=20) as smtp:
+            smtp.login(sender, password)
+            smtp.send_message(msg)
+        return
+
     with smtplib.SMTP(host, port, timeout=20) as smtp:
+        smtp.ehlo()
         if use_tls:
             smtp.starttls()
+            smtp.ehlo()
         smtp.login(sender, password)
         smtp.send_message(msg)
 
+def _send_email_otp(to_email: str, otp: str, purpose: str):
+    sender = current_app.config.get("MAIL_USERNAME")
+    msg = EmailMessage(); msg["Subject"] = f"Your ERP {purpose} OTP"; msg["From"] = sender; msg["To"] = to_email
+    msg.set_content(f"Your OTP is {otp}. It will expire in {OTP_TTL_MINUTES} minutes.")
+    _smtp_send_message(msg)
+
 def _send_invite_email(to_email: str, token: str, company_name: str):
-    sender = current_app.config.get("MAIL_USERNAME"); password = current_app.config.get("MAIL_PASSWORD")
-    host = current_app.config.get("MAIL_SERVER", "smtp.gmail.com"); port = int(current_app.config.get("MAIL_PORT", 587)); use_tls = bool(current_app.config.get("MAIL_USE_TLS", True))
-    if not sender or not password: raise ValueError("Email service not configured. Set MAIL_USERNAME and MAIL_PASSWORD.")
+    sender = current_app.config.get("MAIL_USERNAME")
     base_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
     msg = EmailMessage(); msg["Subject"] = f"Admin Invite for {company_name}"; msg["From"] = sender; msg["To"] = to_email
     msg.set_content(f"You were invited as admin for {company_name}. Use this link to accept invite: {base_url}/admin/accept-invite?token={token}")
-    with smtplib.SMTP(host, port, timeout=20) as smtp:
-        if use_tls:
-            smtp.starttls()
-        smtp.login(sender, password)
-        smtp.send_message(msg)
+    _smtp_send_message(msg)
 
 
 
