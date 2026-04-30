@@ -16,7 +16,7 @@ export default function Navbar({ user, onLogout }) {
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
         <h1 className="text-xl font-semibold tracking-tight text-slate-100">Accounting ERP</h1>
         <nav className="flex flex-wrap gap-2">
-          {links.map((link) => {
+          {(user?.is_main_admin ? links.filter((l) => l.to === "/dashboard") : links).map((link) => {
             const Icon = link.icon;
             return (
               <Link
