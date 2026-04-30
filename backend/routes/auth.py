@@ -1,10 +1,10 @@
-import bcrypt, random, smtplib, uuid, logging
+import bcrypt, random, smtplib, uuid, logging, re
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from models import Company, User, UserRole, UserApprovalStatus, AdminInvite, OtpVerification, db
+from models import Company, User, UserRole, UserApprovalStatus, AdminInvite, OtpVerification, Ledger, StockItem, Transaction, StockHistory, db
 from utils.validators import require_fields
 from utils.decorators import admin_required
 
@@ -12,17 +12,82 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 logger = logging.getLogger(__name__)
 OTP_TTL_MINUTES = 10
 
+GMAIL_RE = re.compile(r"^[A-Za-z0-9._%+-]+@gmail\.com$")
+
+def _ensure_gmail(email: str):
+    if not GMAIL_RE.match(email):
+        return jsonify({"message": "Only Gmail addresses are allowed"}), 400
+    return None, None
+
 def _generate_otp() -> str: return f"{random.randint(0, 999999):06d}"
 
+
+
+def _mail_config_missing() -> bool:
+    return not current_app.config.get("MAIL_USERNAME") or not current_app.config.get("MAIL_PASSWORD")
+
+def _smtp_send_message(msg: EmailMessage):
+    sender = current_app.config.get("MAIL_USERNAME")
+    password = current_app.config.get("MAIL_PASSWORD")
+    host = current_app.config.get("MAIL_SERVER", "smtp.gmail.com")
+    port = int(current_app.config.get("MAIL_PORT", 587))
+    use_tls = current_app.config.get("MAIL_USE_TLS", True)
+    use_ssl = current_app.config.get("MAIL_USE_SSL", False)
+
+    logger.info("Mail config host=%s port=%s tls=%s ssl=%s username_set=%s", host, port, use_tls, use_ssl, bool(sender))
+
+    if not sender or not password:
+        raise ValueError("Email service not configured. Set MAIL_USERNAME and MAIL_PASSWORD (Gmail app password).")
+
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(host, port, timeout=20) as smtp:
+                smtp.login(sender, password)
+                smtp.send_message(msg)
+            return
+
+        with smtplib.SMTP(host, port, timeout=20) as smtp:
+            smtp.ehlo()
+            if use_tls:
+                smtp.starttls()
+                smtp.ehlo()
+            smtp.login(sender, password)
+            smtp.send_message(msg)
+    except Exception as exc:
+        logger.exception("SMTP send failed")
+        raise exc
+
 def _send_email_otp(to_email: str, otp: str, purpose: str):
-    sender = current_app.config.get("MAIL_USERNAME"); password = current_app.config.get("MAIL_PASSWORD")
-    host = current_app.config.get("MAIL_SERVER", "smtp.gmail.com"); port = int(current_app.config.get("MAIL_PORT", 587)); use_tls = bool(current_app.config.get("MAIL_USE_TLS", True))
-    logger.info("MAIL_USERNAME configured: %s", bool(sender))
-    if not sender or not password: raise ValueError("Email service not configured. Set MAIL_USERNAME and MAIL_PASSWORD.")
+    sender = current_app.config.get("MAIL_USERNAME")
     msg = EmailMessage(); msg["Subject"] = f"Your ERP {purpose} OTP"; msg["From"] = sender; msg["To"] = to_email
     msg.set_content(f"Your OTP is {otp}. It will expire in {OTP_TTL_MINUTES} minutes.")
-    with smtplib.SMTP(host, port, timeout=20) as smtp:
-        if use_tls: smtp.starttls(); smtp.login(sender, password); smtp.send_message(msg)
+    _smtp_send_message(msg)
+
+def _send_invite_email(to_email: str, token: str, company_name: str):
+    sender = current_app.config.get("MAIL_USERNAME")
+    base_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
+    msg = EmailMessage(); msg["Subject"] = f"Admin Invite for {company_name}"; msg["From"] = sender; msg["To"] = to_email
+    msg.set_content(f"You were invited as admin for {company_name}. Use this link to accept invite: {base_url}/admin/accept-invite?token={token}")
+    _smtp_send_message(msg)
+
+
+
+def _mail_error_hint(exc: Exception) -> str:
+    return f"Mail delivery failed ({exc}). Verify MAIL_USERNAME, Gmail App Password in MAIL_PASSWORD, MAIL_SERVER=smtp.gmail.com, MAIL_PORT=587, MAIL_USE_TLS=true."
+
+def _deliver_otp(email: str, otp: str, purpose: str):
+    try:
+        _send_email_otp(email, otp, purpose)
+        return "email"
+    except Exception:
+        allow_fallback = bool(current_app.config.get("MAIL_FALLBACK_TO_LOG", True))
+        if _mail_config_missing():
+            logger.warning("MAIL_USERNAME / MAIL_PASSWORD missing. For Gmail, use App Password (not account password).")
+        if not allow_fallback:
+            raise
+        logger.exception("OTP email delivery failed; falling back to server log")
+        logger.warning("OTP fallback [%s] for %s: %s", purpose, email, otp)
+        return "log"
 
 def _find_company(payload):
     code = payload.get("company_code", "").strip().upper()
@@ -75,6 +140,50 @@ def update_company(company_code):
     db.session.commit()
     return jsonify({"message": "Company updated"}), 200
 
+@auth_bp.delete('/admin/companies/<string:company_code>')
+@jwt_required()
+@admin_required
+def delete_company(company_code):
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or not actor.is_main_admin: return jsonify({"message": "Only main admin can manage companies"}), 403
+    company = Company.query.filter_by(company_code=company_code.upper()).first()
+    if not company: return jsonify({"message": "Company not found"}), 404
+    if actor.company_id == company.id: return jsonify({"message": "Main admin company cannot be deleted"}), 400
+
+    cleanup_related = str(request.args.get("cleanup_related", "false")).lower() == "true"
+
+    user_exists = User.query.filter_by(company_id=company.id).first()
+    invite_exists = AdminInvite.query.filter_by(company_id=company.id).first()
+    otp_exists = OtpVerification.query.filter_by(company_id=company.id).first()
+
+    if user_exists:
+        return jsonify({"message": "Cannot delete company with existing related records"}), 400
+
+    if cleanup_related and (invite_exists or otp_exists):
+        AdminInvite.query.filter_by(company_id=company.id).delete()
+        OtpVerification.query.filter_by(company_id=company.id).delete()
+        db.session.flush()
+        invite_exists = None
+        otp_exists = None
+
+    if invite_exists or otp_exists:
+        return jsonify({"message": "Cannot delete company with existing related records"}), 400
+
+    has_ledgers = Ledger.query.filter_by(company_id=company.id).first()
+    has_stock_items = StockItem.query.filter_by(company_id=company.id).first()
+    has_transactions = Transaction.query.filter_by(company_id=company.id).first()
+    has_stock_history = StockHistory.query.filter_by(company_id=company.id).first()
+    if any([has_ledgers, has_stock_items, has_transactions, has_stock_history]):
+        return jsonify({"message": "Cannot delete company with existing related records"}), 400
+
+    try:
+        db.session.delete(company)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"message": "Cannot delete company with existing related records"}), 400
+    return jsonify({"message": "Company deleted"}), 200
+
 @auth_bp.post('/send-otp')
 @auth_bp.post('/register/request-otp')
 def send_register_otp():
@@ -83,15 +192,17 @@ def send_register_otp():
     if error: return error
     company, err, code = _find_company(payload)
     if err: return err, code
-    email = payload["email"].strip().lower(); otp = _generate_otp()
+    email = payload["email"].strip().lower(); err, code = _ensure_gmail(email)
+    if err: return err, code
+    otp = _generate_otp()
     if User.query.filter_by(email=email, company_id=company.id).first(): return jsonify({"message": "Email already registered"}), 409
     try:
-        _send_email_otp(email, otp, "registration")
+        delivery_mode = _deliver_otp(email, otp, "registration")
         OtpVerification.query.filter_by(email=email, company_id=company.id, purpose="register", verified=False).delete()
         db.session.add(OtpVerification(company_id=company.id, email=email, otp=otp, purpose="register", expires_at=datetime.now(timezone.utc)+timedelta(minutes=OTP_TTL_MINUTES), verified=False)); db.session.commit()
     except Exception as exc:
-        db.session.rollback(); logger.exception("OTP send failed"); return jsonify({"message": "Failed to send OTP", "error": str(exc)}), 500
-    return jsonify({"message": "OTP sent to your email"}), 200
+        db.session.rollback(); logger.exception("OTP send failed"); return jsonify({"message": "Failed to send OTP", "error": _mail_error_hint(exc)}), 500
+    return jsonify({"message": "OTP sent to your email" if delivery_mode == "email" else "OTP generated. Email service unavailable; contact admin."}), 200
 
 @auth_bp.post('/verify-otp')
 def verify_register_otp():
@@ -112,15 +223,30 @@ def register():
     company, err, code = _find_company(payload)
     if err: return err, code
     email = payload["email"].strip().lower()
-    row = OtpVerification.query.filter_by(company_id=company.id, email=email, otp=payload["otp"].strip(), purpose="register", verified=True).order_by(OtpVerification.created_at.desc()).first()
-    if not row or datetime.now(timezone.utc) > row.expires_at: return jsonify({"message": "OTP verification required"}), 400
+
     try:
-        if User.query.filter_by(email=email, company_id=company.id).first(): return jsonify({"message": "Email already registered"}), 409
+        existing_user = User.query.filter_by(email=email, company_id=company.id).first()
+        if existing_user:
+            return jsonify({"message": "Account created successfully"}), 200
+
+        now_utc = datetime.now(timezone.utc)
+        verified_row = OtpVerification.query.filter_by(company_id=company.id, email=email, purpose="register", verified=True).order_by(OtpVerification.created_at.desc()).first()
+
+        if not verified_row or now_utc > verified_row.expires_at:
+            pending_row = OtpVerification.query.filter_by(company_id=company.id, email=email, otp=payload["otp"].strip(), purpose="register", verified=False).order_by(OtpVerification.created_at.desc()).first()
+            if not pending_row or now_utc > pending_row.expires_at:
+                return jsonify({"message": "OTP verification required"}), 400
+            pending_row.verified = True
+            verified_row = pending_row
+
         db.session.add(User(full_name=payload["full_name"].strip(), email=email, password_hash=bcrypt.hashpw(payload["password"].encode(), bcrypt.gensalt()).decode(), role=UserRole.accountant, company_id=company.id, approval_status=UserApprovalStatus.pending, is_active=True))
-        db.session.delete(row); db.session.commit()
-    except IntegrityError: db.session.rollback(); return jsonify({"message": "Email already registered"}), 409
-    except SQLAlchemyError as exc: db.session.rollback(); return jsonify({"message": "Registration failed due to database error", "error": str(getattr(exc, 'orig', exc))}), 500
-    return jsonify({"message": "User registered successfully. Awaiting main admin approval."}), 201
+        OtpVerification.query.filter_by(company_id=company.id, email=email, purpose="register").delete()
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback(); return jsonify({"message": "Email already registered"}), 409
+    except SQLAlchemyError as exc:
+        db.session.rollback(); return jsonify({"message": "Registration failed due to database error", "error": str(getattr(exc, 'orig', exc))}), 500
+    return jsonify({"message": "Account created successfully"}), 201
 
 @auth_bp.get('/admin/pending-accountants')
 @jwt_required()
@@ -165,9 +291,24 @@ def admin_invite():
     if error: return error
     inviter = User.query.get(int(get_jwt_identity()))
     if not inviter or not inviter.is_main_admin: return jsonify({"message":"Only main admin can invite admins"}), 403
+    invite_email = payload["email"].strip().lower()
+    err, code = _ensure_gmail(invite_email)
+    if err: return err, code
+    company_id = inviter.company_id
+    if payload.get("company_code"):
+        target = Company.query.filter_by(company_code=payload["company_code"].strip().upper()).first()
+        if not target:
+            return jsonify({"message": "Company not found"}), 404
+        company_id = target.id
     token = str(uuid.uuid4())
-    db.session.add(AdminInvite(company_id=inviter.company_id,email=payload["email"].strip().lower(),token=token,created_by=inviter.id,expires_at=datetime.now(timezone.utc)+timedelta(days=1),used=False)); db.session.commit()
-    return jsonify({"token":token,"invite_link":f"/admin/accept?token={token}"}), 201
+    db.session.add(AdminInvite(company_id=company_id,email=invite_email,token=token,created_by=inviter.id,expires_at=datetime.now(timezone.utc)+timedelta(days=1),used=False)); db.session.commit()
+    try:
+        company = Company.query.get(company_id)
+        _send_invite_email(invite_email, token, company.company_name if company else "your company")
+    except Exception as exc:
+        logger.exception("Admin invite email send failed")
+        return jsonify({"message":"Invite created but email delivery failed","token":token,"error":_mail_error_hint(exc)}), 201
+    return jsonify({"message":"Invite sent successfully","token":token,"invite_link":f"/admin/accept?token={token}"}), 201
 
 @auth_bp.post('/admin/accept-invite')
 def accept_admin_invite():
@@ -190,11 +331,11 @@ def forgot_send_otp():
     if not user: return jsonify({"message":"User not found"}),404
     otp = _generate_otp()
     try:
-        _send_email_otp(email, otp, "password reset")
+        delivery_mode = _deliver_otp(email, otp, "password reset")
         OtpVerification.query.filter_by(email=email, company_id=company.id, purpose="reset", verified=False).delete()
         db.session.add(OtpVerification(company_id=company.id,email=email,otp=otp,purpose="reset",expires_at=datetime.now(timezone.utc)+timedelta(minutes=OTP_TTL_MINUTES),verified=False)); db.session.commit()
-    except Exception as exc: db.session.rollback(); logger.exception("Forgot OTP send failed"); return jsonify({"message":"Failed to send OTP","error":str(exc)}),500
-    return jsonify({"message":"OTP sent to your email"}),200
+    except Exception as exc: db.session.rollback(); logger.exception("Forgot OTP send failed"); return jsonify({"message":"Failed to send OTP","error":_mail_error_hint(exc)}),500
+    return jsonify({"message":"OTP sent to your email" if delivery_mode == "email" else "OTP generated. Email service unavailable; contact admin."}),200
 
 @auth_bp.post('/forgot-password/verify-otp')
 def forgot_verify_otp():
