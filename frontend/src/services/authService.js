@@ -1,6 +1,7 @@
 import api from "./api";
 
 export const login = (payload) => api.post("/auth/login", payload);
+export const fetchCompanies = () => api.get("/auth/companies");
 export const requestRegisterOtp = (payload) => api.post("/auth/register/request-otp", payload);
 export const verifyRegisterOtp = (payload) => api.post("/auth/verify-otp", payload);
 export const register = (payload) => api.post("/auth/register", payload);

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { register, requestRegisterOtp } from "../services/authService";
+import { fetchCompanies, register, requestRegisterOtp } from "../services/authService";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -8,6 +8,9 @@ export default function RegisterPage() {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [message, setMessage] = useState("");
+  const [companies, setCompanies] = useState([]);
+
+  useEffect(() => { fetchCompanies().then(({data}) => setCompanies(data || [])).catch(() => setCompanies([])); }, []);
 
   const sendOtp = async (e) => {
     e.preventDefault();
@@ -41,8 +44,7 @@ export default function RegisterPage() {
         <input className="input-premium mb-3" placeholder="Full Name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} disabled={otpSent} />
         <input className="input-premium mb-3" placeholder="Email (gmail/yahoo)" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} disabled={otpSent} />
         <input className="input-premium mb-3" type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} disabled={otpSent} />
-        <input className="input-premium mb-3" placeholder="Company Code (e.g. ACME01)" value={form.company_code} onChange={(e) => setForm({ ...form, company_code: e.target.value })} disabled={otpSent} />
-        <input className="input-premium mb-3" placeholder="Company Name" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} disabled={otpSent} />
+        <select className="input-premium mb-3" value={form.company_code} onChange={(e) => { const selected = companies.find((c) => c.company_code === e.target.value); setForm({ ...form, company_code: e.target.value, company_name: selected?.company_name || "" }); }} disabled={otpSent}><option value="">Select Company</option>{companies.map((c) => <option key={c.company_code} value={c.company_code}>{c.company_name} ({c.company_code})</option>)}</select>
         {otpSent && <input className="input-premium mb-3" placeholder="Enter 6-digit OTP" value={otp} onChange={(e) => setOtp(e.target.value)} />}
         <button className="btn-primary w-full">{otpSent ? "Verify OTP & Create Account" : "Send OTP"}</button>
         <p className="mt-3 text-sm">Have account? <Link className="font-medium text-blue-600" to="/login">Login</Link></p>

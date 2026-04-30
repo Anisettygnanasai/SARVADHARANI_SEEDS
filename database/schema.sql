@@ -133,7 +133,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_users_company_approval ON users(company_id, approval_status);
 
 INSERT INTO users (company_id, full_name, email, password_hash, role, is_active, is_main_admin, approval_status)
-SELECT c.id, 'Company Main Admin', 'mainadmin@anits.com', '$2b$12$m.AXnS//vLToPiVYWFY55uVIjZRMxNqT2v5SmJefsDuCJYAPwl7p.', 'admin', TRUE, TRUE, 'approved'
+SELECT c.id, 'Company Main Admin', 'gnanianisetty2005@gmail.com', '$2b$12$Y1DrYDkaDuYWvCgldbzK5eSQhzsOfpIflUY0skzgcuJFCpw3XP7NS', 'admin', TRUE, TRUE, 'approved'
 FROM companies c
 WHERE c.company_code = 'ANITS1'
 ON CONFLICT DO NOTHING;

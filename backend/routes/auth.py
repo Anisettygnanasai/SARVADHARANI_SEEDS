@@ -31,6 +31,41 @@ def _find_company(payload):
     if not c: return None, jsonify({"message": "Company not found"}), 404
     return c, None, None
 
+
+@auth_bp.get('/companies')
+def list_companies():
+    companies = Company.query.filter_by(is_active=True).order_by(Company.company_name.asc()).all()
+    return jsonify([{"company_code": c.company_code, "company_name": c.company_name} for c in companies]), 200
+
+@auth_bp.post('/admin/companies')
+@jwt_required()
+@admin_required
+def create_company():
+    payload = request.get_json() or {}
+    error = require_fields(payload, ["company_code", "company_name"])
+    if error: return error
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or not actor.is_main_admin: return jsonify({"message": "Only main admin can manage companies"}), 403
+    code = payload["company_code"].strip().upper()
+    if Company.query.filter_by(company_code=code).first(): return jsonify({"message": "Company code already exists"}), 409
+    company = Company(company_code=code, company_name=payload["company_name"].strip(), is_active=bool(payload.get("is_active", True)))
+    db.session.add(company); db.session.commit()
+    return jsonify({"message": "Company created", "company_code": company.company_code}), 201
+
+@auth_bp.put('/admin/companies/<string:company_code>')
+@jwt_required()
+@admin_required
+def update_company(company_code):
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or not actor.is_main_admin: return jsonify({"message": "Only main admin can manage companies"}), 403
+    company = Company.query.filter_by(company_code=company_code.upper()).first()
+    if not company: return jsonify({"message": "Company not found"}), 404
+    payload = request.get_json() or {}
+    if "company_name" in payload: company.company_name = payload["company_name"].strip()
+    if "is_active" in payload: company.is_active = bool(payload["is_active"])
+    db.session.commit()
+    return jsonify({"message": "Company updated"}), 200
+
 @auth_bp.post('/send-otp')
 @auth_bp.post('/register/request-otp')
 def send_register_otp():
