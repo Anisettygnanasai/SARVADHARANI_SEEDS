@@ -23,6 +23,9 @@ def _generate_otp() -> str: return f"{random.randint(0, 999999):06d}"
 
 
 
+def _mail_config_missing() -> bool:
+    return not current_app.config.get("MAIL_USERNAME") or not current_app.config.get("MAIL_PASSWORD")
+
 def _smtp_send_message(msg: EmailMessage):
     sender = current_app.config.get("MAIL_USERNAME")
     password = current_app.config.get("MAIL_PASSWORD")
@@ -36,19 +39,23 @@ def _smtp_send_message(msg: EmailMessage):
     if not sender or not password:
         raise ValueError("Email service not configured. Set MAIL_USERNAME and MAIL_PASSWORD (Gmail app password).")
 
-    if use_ssl:
-        with smtplib.SMTP_SSL(host, port, timeout=20) as smtp:
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(host, port, timeout=20) as smtp:
+                smtp.login(sender, password)
+                smtp.send_message(msg)
+            return
+
+        with smtplib.SMTP(host, port, timeout=20) as smtp:
+            smtp.ehlo()
+            if use_tls:
+                smtp.starttls()
+                smtp.ehlo()
             smtp.login(sender, password)
             smtp.send_message(msg)
-        return
-
-    with smtplib.SMTP(host, port, timeout=20) as smtp:
-        smtp.ehlo()
-        if use_tls:
-            smtp.starttls()
-            smtp.ehlo()
-        smtp.login(sender, password)
-        smtp.send_message(msg)
+    except Exception as exc:
+        logger.exception("SMTP send failed")
+        raise exc
 
 def _send_email_otp(to_email: str, otp: str, purpose: str):
     sender = current_app.config.get("MAIL_USERNAME")
@@ -74,6 +81,8 @@ def _deliver_otp(email: str, otp: str, purpose: str):
         return "email"
     except Exception:
         allow_fallback = bool(current_app.config.get("MAIL_FALLBACK_TO_LOG", True))
+        if _mail_config_missing():
+            logger.warning("MAIL_USERNAME / MAIL_PASSWORD missing. For Gmail, use App Password (not account password).")
         if not allow_fallback:
             raise
         logger.exception("OTP email delivery failed; falling back to server log")
