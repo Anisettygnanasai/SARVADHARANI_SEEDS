@@ -31,3 +31,5 @@ class Config:
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "")
 
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
+    MAIL_FALLBACK_TO_LOG = os.getenv("MAIL_FALLBACK_TO_LOG", "true").lower() == "true"

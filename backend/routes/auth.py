@@ -47,6 +47,20 @@ def _send_invite_email(to_email: str, token: str, company_name: str):
         smtp.login(sender, password)
         smtp.send_message(msg)
 
+
+
+def _deliver_otp(email: str, otp: str, purpose: str):
+    try:
+        _send_email_otp(email, otp, purpose)
+        return "email"
+    except Exception:
+        allow_fallback = bool(current_app.config.get("MAIL_FALLBACK_TO_LOG", True))
+        if not allow_fallback:
+            raise
+        logger.exception("OTP email delivery failed; falling back to server log")
+        logger.warning("OTP fallback [%s] for %s: %s", purpose, email, otp)
+        return "log"
+
 def _find_company(payload):
     code = payload.get("company_code", "").strip().upper()
     if not code: return None, jsonify({"message": "company_code is required"}), 400
@@ -126,12 +140,12 @@ def send_register_otp():
     otp = _generate_otp()
     if User.query.filter_by(email=email, company_id=company.id).first(): return jsonify({"message": "Email already registered"}), 409
     try:
-        _send_email_otp(email, otp, "registration")
+        delivery_mode = _deliver_otp(email, otp, "registration")
         OtpVerification.query.filter_by(email=email, company_id=company.id, purpose="register", verified=False).delete()
         db.session.add(OtpVerification(company_id=company.id, email=email, otp=otp, purpose="register", expires_at=datetime.now(timezone.utc)+timedelta(minutes=OTP_TTL_MINUTES), verified=False)); db.session.commit()
     except Exception as exc:
         db.session.rollback(); logger.exception("OTP send failed"); return jsonify({"message": "Failed to send OTP", "error": str(exc)}), 500
-    return jsonify({"message": "OTP sent to your email"}), 200
+    return jsonify({"message": "OTP sent to your email" if delivery_mode == "email" else "OTP generated. Email service unavailable; contact admin."}), 200
 
 @auth_bp.post('/verify-otp')
 def verify_register_otp():
@@ -245,11 +259,11 @@ def forgot_send_otp():
     if not user: return jsonify({"message":"User not found"}),404
     otp = _generate_otp()
     try:
-        _send_email_otp(email, otp, "password reset")
+        delivery_mode = _deliver_otp(email, otp, "password reset")
         OtpVerification.query.filter_by(email=email, company_id=company.id, purpose="reset", verified=False).delete()
         db.session.add(OtpVerification(company_id=company.id,email=email,otp=otp,purpose="reset",expires_at=datetime.now(timezone.utc)+timedelta(minutes=OTP_TTL_MINUTES),verified=False)); db.session.commit()
     except Exception as exc: db.session.rollback(); logger.exception("Forgot OTP send failed"); return jsonify({"message":"Failed to send OTP","error":str(exc)}),500
-    return jsonify({"message":"OTP sent to your email"}),200
+    return jsonify({"message":"OTP sent to your email" if delivery_mode == "email" else "OTP generated. Email service unavailable; contact admin."}),200
 
 @auth_bp.post('/forgot-password/verify-otp')
 def forgot_verify_otp():

@@ -47,7 +47,7 @@ export default function RegisterPage() {
         <select className="input-premium mb-3" value={form.company_code} onChange={(e) => { const selected = companies.find((c) => c.company_code === e.target.value); setForm({ ...form, company_code: e.target.value, company_name: selected?.company_name || "" }); }} disabled={otpSent}><option value="">Select Company</option>{companies.map((c) => <option key={c.company_code} value={c.company_code}>{c.company_name} ({c.company_code})</option>)}</select>
         {otpSent && <input className="input-premium mb-3" placeholder="Enter 6-digit OTP" value={otp} onChange={(e) => setOtp(e.target.value)} />}
         <button className="btn-primary w-full">{otpSent ? "Verify OTP & Create Account" : "Send OTP"}</button>
-        <button type="button" className="mt-2 w-full rounded-lg border border-white/20 px-4 py-2 text-sm" onClick={() => setMessage("Google login will be enabled after OAuth client setup.")}>Continue with Google</button>
+        <button type="button" disabled className="mt-2 w-full rounded-lg border border-white/20 px-4 py-2 text-sm opacity-70 cursor-not-allowed">Continue with Google</button>
         <p className="mt-3 text-sm">Have account? <Link className="font-medium text-blue-600" to="/login">Login</Link></p>
       </form>
     </div>
