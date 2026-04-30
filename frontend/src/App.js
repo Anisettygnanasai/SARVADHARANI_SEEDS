@@ -32,7 +32,7 @@ export default function App() {
         path="/dashboard"
         element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <Layout user={user} onLogout={logout}><DashboardPage /></Layout>
+            <Layout user={user} onLogout={logout}><DashboardPage user={user} /></Layout>
           </ProtectedRoute>
         }
       />
