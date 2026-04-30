@@ -20,7 +20,8 @@ export default function RegisterPage() {
       setOtpSent(true);
       setMessage("OTP sent to your email. Enter OTP to complete registration.");
     } catch (err) {
-      setMessage(err.response?.data?.message || "Failed to send OTP");
+      const data = err.response?.data || {};
+      setMessage(data.error || data.message || "Failed to send OTP");
     }
   };
 

@@ -30,7 +30,7 @@ export default function DashboardPage({ user }) {
 
   const handleApprove = async (user_id) => { await approveAccountant({ user_id }); setMsg("Accountant approved"); loadAdminData(); };
   const handleReject = async (user_id) => { await rejectAccountant({ user_id }); setMsg("Accountant rejected"); loadAdminData(); };
-  const handleInvite = async (e) => { e.preventDefault(); const { data } = await inviteAdmin({ email: inviteEmail, company_code: inviteCompanyCode || undefined }); setMsg(data.message || `Invite token: ${data.token}`); setInviteEmail(""); };
+  const handleInvite = async (e) => { e.preventDefault(); try { const { data } = await inviteAdmin({ email: inviteEmail, company_code: inviteCompanyCode || undefined }); setMsg(data.error ? `${data.message}: ${data.error}` : (data.message || `Invite token: ${data.token}`)); setInviteEmail(""); } catch (err) { const data = err.response?.data || {}; setMsg(data.error || data.message || "Invite failed"); } };
   const handleDeleteCompany = async (code) => { await deleteCompany(code); setMsg("Company deleted"); loadAdminData(); };
   const handleCreateCompany = async (e) => { e.preventDefault(); await createCompany(companyForm); setMsg("Company created"); setCompanyForm({ company_code: "", company_name: "" }); loadAdminData(); };
   const handleToggleCompany = async (code, isActive) => { await updateCompany(code, { is_active: !isActive }); setMsg("Company status updated"); loadAdminData(); };
