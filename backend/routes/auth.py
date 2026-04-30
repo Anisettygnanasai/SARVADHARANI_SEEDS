@@ -149,24 +149,39 @@ def delete_company(company_code):
     company = Company.query.filter_by(company_code=company_code.upper()).first()
     if not company: return jsonify({"message": "Company not found"}), 404
     if actor.company_id == company.id: return jsonify({"message": "Main admin company cannot be deleted"}), 400
-    user_exists = User.query.filter_by(company_id=company.id).first()
-    if user_exists: return jsonify({"message": "Cannot delete company with users. Deactivate instead."}), 400
 
-    has_admin_invites = AdminInvite.query.filter_by(company_id=company.id).first()
-    has_otp_rows = OtpVerification.query.filter_by(company_id=company.id).first()
+    cleanup_related = str(request.args.get("cleanup_related", "false")).lower() == "true"
+
+    user_exists = User.query.filter_by(company_id=company.id).first()
+    invite_exists = AdminInvite.query.filter_by(company_id=company.id).first()
+    otp_exists = OtpVerification.query.filter_by(company_id=company.id).first()
+
+    if user_exists:
+        return jsonify({"message": "Cannot delete company with existing related records"}), 400
+
+    if cleanup_related and (invite_exists or otp_exists):
+        AdminInvite.query.filter_by(company_id=company.id).delete()
+        OtpVerification.query.filter_by(company_id=company.id).delete()
+        db.session.flush()
+        invite_exists = None
+        otp_exists = None
+
+    if invite_exists or otp_exists:
+        return jsonify({"message": "Cannot delete company with existing related records"}), 400
+
     has_ledgers = Ledger.query.filter_by(company_id=company.id).first()
     has_stock_items = StockItem.query.filter_by(company_id=company.id).first()
     has_transactions = Transaction.query.filter_by(company_id=company.id).first()
     has_stock_history = StockHistory.query.filter_by(company_id=company.id).first()
-    if any([has_admin_invites, has_otp_rows, has_ledgers, has_stock_items, has_transactions, has_stock_history]):
-        return jsonify({"message": "Cannot delete company with related records. Deactivate instead."}), 400
+    if any([has_ledgers, has_stock_items, has_transactions, has_stock_history]):
+        return jsonify({"message": "Cannot delete company with existing related records"}), 400
 
     try:
         db.session.delete(company)
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"message": "Cannot delete company with related records. Deactivate instead."}), 400
+        return jsonify({"message": "Cannot delete company with existing related records"}), 400
     return jsonify({"message": "Company deleted"}), 200
 
 @auth_bp.post('/send-otp')
