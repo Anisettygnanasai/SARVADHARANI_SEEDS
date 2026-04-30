@@ -4,59 +4,55 @@ import MiniBarChart from "../components/MiniBarChart";
 import { fetchLedgers } from "../services/ledgerService";
 import { fetchStocks } from "../services/stockService";
 import { fetchTransactions } from "../services/transactionService";
+import { approveAccountant, createCompany, fetchAdminCompanies, fetchPendingAccountants, inviteAdmin, rejectAccountant, updateCompany } from "../services/authService";
 
 export default function DashboardPage({ user }) {
   const isMainAdmin = Boolean(user?.is_main_admin);
-  const [ledgers, setLedgers] = useState([]);
-  const [stocks, setStocks] = useState([]);
-  const [transactions, setTransactions] = useState([]);
+  const [ledgers, setLedgers] = useState([]); const [stocks, setStocks] = useState([]); const [transactions, setTransactions] = useState([]);
   const [error, setError] = useState("");
+  const [pending, setPending] = useState([]); const [companies, setCompanies] = useState([]); const [msg, setMsg] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [companyForm, setCompanyForm] = useState({ company_code: "", company_name: "" });
+
+  const loadAdminData = () => Promise.all([fetchPendingAccountants(), fetchAdminCompanies()]).then(([p, c]) => { setPending(p.data || []); setCompanies(c.data || []); });
 
   useEffect(() => {
-    if (isMainAdmin) return;
-    Promise.all([fetchLedgers(), fetchStocks(), fetchTransactions()])
-      .then(([l, s, t]) => {
-        setLedgers(l.data);
-        setStocks(s.data);
-        setTransactions(t.data);
-      })
-      .catch((err) => setError(err.response?.data?.message || "Failed to load dashboard"));
+    if (isMainAdmin) { loadAdminData().catch((e) => setError(e.response?.data?.message || "Failed to load admin data")); return; }
+    Promise.all([fetchLedgers(), fetchStocks(), fetchTransactions()]).then(([l, s, t]) => { setLedgers(l.data); setStocks(s.data); setTransactions(t.data); }).catch((err) => setError(err.response?.data?.message || "Failed to load dashboard"));
   }, [isMainAdmin]);
 
   const chartData = useMemo(() => {
     const agg = { sales: 0, purchase: 0, payment: 0, receipt: 0 };
-    transactions.forEach((t) => {
-      agg[t.transaction_type] += 1;
-    });
+    transactions.forEach((t) => { agg[t.transaction_type] += 1; });
     return Object.entries(agg).map(([label, value]) => ({ label, value }));
   }, [transactions]);
 
-  if (isMainAdmin) {
-    return (
-      <div className="space-y-4">
-        <h2 className="text-2xl font-semibold">Main Admin Control Center</h2>
-        <p className="text-slate-300">You can manage companies, approve/reject accountant requests, and invite admins.</p>
-        <div className="rounded-xl border border-white/10 bg-slate-900/60 p-4 text-sm text-slate-200">
-          Use these APIs from your admin tools/UI integration:<br />
-          • GET /api/auth/admin/pending-accountants<br />
-          • POST /api/auth/admin/approve-accountant<br />
-          • POST /api/auth/admin/reject-accountant<br />
-          • POST /api/auth/admin/invite<br />
-          • POST /api/auth/admin/companies<br />
-          • PUT /api/auth/admin/companies/:company_code
-        </div>
-      </div>
-    );
-  }
+  const handleApprove = async (user_id) => { await approveAccountant({ user_id }); setMsg("Accountant approved"); loadAdminData(); };
+  const handleReject = async (user_id) => { await rejectAccountant({ user_id }); setMsg("Accountant rejected"); loadAdminData(); };
+  const handleInvite = async (e) => { e.preventDefault(); const { data } = await inviteAdmin({ email: inviteEmail }); setMsg(`Invite token: ${data.token}`); setInviteEmail(""); };
+  const handleCreateCompany = async (e) => { e.preventDefault(); await createCompany(companyForm); setMsg("Company created"); setCompanyForm({ company_code: "", company_name: "" }); loadAdminData(); };
+  const handleToggleCompany = async (code, isActive) => { await updateCompany(code, { is_active: !isActive }); setMsg("Company status updated"); loadAdminData(); };
+
+  if (isMainAdmin) return (
+    <div className="space-y-5">
+      <h2 className="text-2xl font-semibold">Main Admin Control Center</h2>
+      {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {msg && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{msg}</p>}
+
+      <div className="glass-card p-4"><h3 className="mb-2 text-lg font-semibold">Pending Accountant Approvals</h3>{pending.length === 0 ? <p>No pending users.</p> : pending.map((u) => <div key={u.id} className="mb-2 flex items-center justify-between rounded-lg border border-white/10 p-2"><span>{u.full_name} ({u.email})</span><div className="flex gap-2"><button className="btn-primary" onClick={() => handleApprove(u.id)}>Approve</button><button className="btn-danger" onClick={() => handleReject(u.id)}>Reject</button></div></div>)}</div>
+
+      <form className="glass-card p-4" onSubmit={handleInvite}><h3 className="mb-2 text-lg font-semibold">Invite Admin</h3><input className="input-premium mb-2" placeholder="Admin email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} /><button className="btn-primary">Send Invite</button></form>
+
+      <form className="glass-card p-4" onSubmit={handleCreateCompany}><h3 className="mb-2 text-lg font-semibold">Create Company</h3><input className="input-premium mb-2" placeholder="Company Code" value={companyForm.company_code} onChange={(e) => setCompanyForm({ ...companyForm, company_code: e.target.value.toUpperCase() })} /><input className="input-premium mb-2" placeholder="Company Name" value={companyForm.company_name} onChange={(e) => setCompanyForm({ ...companyForm, company_name: e.target.value })} /><button className="btn-primary">Create Company</button></form>
+
+      <div className="glass-card p-4"><h3 className="mb-2 text-lg font-semibold">Manage Companies</h3>{companies.map((c) => <div key={c.company_code} className="mb-2 flex items-center justify-between rounded-lg border border-white/10 p-2"><span>{c.company_name} ({c.company_code}) - {c.is_active ? "Active" : "Inactive"}</span><button className={c.is_active ? "btn-danger" : "btn-primary"} onClick={() => handleToggleCompany(c.company_code, c.is_active)}>{c.is_active ? "Deactivate" : "Activate"}</button></div>)}</div>
+    </div>
+  );
 
   return (
     <div className="space-y-5">
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <DashboardCard title="Total Ledgers" value={ledgers.length} />
-        <DashboardCard title="Stock Items" value={stocks.length} />
-        <DashboardCard title="Transactions" value={transactions.length} />
-      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3"><DashboardCard title="Total Ledgers" value={ledgers.length} /><DashboardCard title="Stock Items" value={stocks.length} /><DashboardCard title="Transactions" value={transactions.length} /></div>
       <MiniBarChart data={chartData} />
     </div>
   );

@@ -37,6 +37,15 @@ def list_companies():
     companies = Company.query.filter_by(is_active=True).order_by(Company.company_name.asc()).all()
     return jsonify([{"company_code": c.company_code, "company_name": c.company_name} for c in companies]), 200
 
+@auth_bp.get('/admin/companies')
+@jwt_required()
+@admin_required
+def list_all_companies_admin():
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or not actor.is_main_admin: return jsonify({"message": "Only main admin can manage companies"}), 403
+    companies = Company.query.order_by(Company.company_name.asc()).all()
+    return jsonify([{"company_code": c.company_code, "company_name": c.company_name, "is_active": c.is_active} for c in companies]), 200
+
 @auth_bp.post('/admin/companies')
 @jwt_required()
 @admin_required
