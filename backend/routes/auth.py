@@ -1,233 +1,190 @@
-import bcrypt
-import random
-import smtplib
+import bcrypt, random, smtplib, uuid, logging
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
-
 from flask import Blueprint, current_app, jsonify, request
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-
-from models import User, UserRole, db
+from models import Company, User, UserRole, UserApprovalStatus, AdminInvite, OtpVerification, db
 from utils.validators import require_fields
-
-ALLOWED_EMAIL_DOMAINS = {
-    "gmail.com",
-    "yahoo.com",
-    "yahoo.co.in",
-    "yahoo.in",
-    "yahoo.co.uk",
-}
-
-# In-memory OTP store for lightweight deployment.
-# key: (purpose, email), value: {otp, expires_at, payload(optional)}
-OTP_STORE = {}
-OTP_TTL_MINUTES = 10
+from utils.decorators import admin_required
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
+logger = logging.getLogger(__name__)
+OTP_TTL_MINUTES = 10
 
-
-def _is_allowed_public_email(email: str) -> bool:
-    parts = email.split("@")
-    return len(parts) == 2 and parts[1] in ALLOWED_EMAIL_DOMAINS
-
-
-def _generate_otp() -> str:
-    return f"{random.randint(0, 999999):06d}"
-
+def _generate_otp() -> str: return f"{random.randint(0, 999999):06d}"
 
 def _send_email_otp(to_email: str, otp: str, purpose: str):
-    sender = current_app.config.get("MAIL_USERNAME")
-    password = current_app.config.get("MAIL_PASSWORD")
-    host = current_app.config.get("MAIL_SERVER")
-    port = int(current_app.config.get("MAIL_PORT", 587))
-    use_tls = bool(current_app.config.get("MAIL_USE_TLS", True))
-
-    if not sender or not password:
-        raise ValueError("Email service not configured. Set MAIL_USERNAME and MAIL_PASSWORD.")
-
-    msg = EmailMessage()
-    msg["Subject"] = f"Your ERP {purpose} OTP"
-    msg["From"] = sender
-    msg["To"] = to_email
+    sender = current_app.config.get("MAIL_USERNAME"); password = current_app.config.get("MAIL_PASSWORD")
+    host = current_app.config.get("MAIL_SERVER", "smtp.gmail.com"); port = int(current_app.config.get("MAIL_PORT", 587)); use_tls = bool(current_app.config.get("MAIL_USE_TLS", True))
+    logger.info("MAIL_USERNAME configured: %s", bool(sender))
+    if not sender or not password: raise ValueError("Email service not configured. Set MAIL_USERNAME and MAIL_PASSWORD.")
+    msg = EmailMessage(); msg["Subject"] = f"Your ERP {purpose} OTP"; msg["From"] = sender; msg["To"] = to_email
     msg.set_content(f"Your OTP is {otp}. It will expire in {OTP_TTL_MINUTES} minutes.")
+    with smtplib.SMTP(host, port, timeout=20) as smtp:
+        if use_tls: smtp.starttls(); smtp.login(sender, password); smtp.send_message(msg)
 
-    with smtplib.SMTP(host, port, timeout=15) as smtp:
-        if use_tls:
-            smtp.starttls()
-        smtp.login(sender, password)
-        smtp.send_message(msg)
+def _find_company(payload):
+    code = payload.get("company_code", "").strip().upper()
+    if not code: return None, jsonify({"message": "company_code is required"}), 400
+    c = Company.query.filter_by(company_code=code).first()
+    if not c: return None, jsonify({"message": "Company not found"}), 404
+    return c, None, None
 
-
-def _set_otp(purpose: str, email: str, otp: str, payload: dict | None = None):
-    OTP_STORE[(purpose, email)] = {
-        "otp": otp,
-        "expires_at": datetime.now(timezone.utc) + timedelta(minutes=OTP_TTL_MINUTES),
-        "payload": payload or {},
-    }
-
-
-def _verify_otp(purpose: str, email: str, otp: str):
-    record = OTP_STORE.get((purpose, email))
-    if not record:
-        return False, "No OTP request found. Please request OTP again."
-
-    if datetime.now(timezone.utc) > record["expires_at"]:
-        OTP_STORE.pop((purpose, email), None)
-        return False, "OTP expired. Please request a new OTP."
-
-    if record["otp"] != otp:
-        return False, "Invalid OTP"
-
-    return True, record
-
-
-@auth_bp.post("/register/request-otp")
-def request_registration_otp():
+@auth_bp.post('/send-otp')
+@auth_bp.post('/register/request-otp')
+def send_register_otp():
     payload = request.get_json() or {}
-    error = require_fields(payload, ["full_name", "email", "password", "role"])
-    if error:
-        return error
-
-    full_name = payload["full_name"].strip()
-    email = payload["email"].strip().lower()
-    password = payload["password"]
-    role_value = payload["role"]
-
-    if len(full_name) < 3:
-        return jsonify({"message": "Full name must be at least 3 characters"}), 400
-    if "@" not in email or "." not in email.split("@")[-1]:
-        return jsonify({"message": "Invalid email format"}), 400
-    if not _is_allowed_public_email(email):
-        return jsonify({"message": "Only Google and Yahoo email addresses are allowed"}), 400
-    if len(password) < 8:
-        return jsonify({"message": "Password must be at least 8 characters"}), 400
-    if role_value not in ["admin", "accountant"]:
-        return jsonify({"message": "Invalid role"}), 400
-
-    if User.query.filter_by(email=email).first():
-        return jsonify({"message": "Email already registered"}), 409
-
-    otp = _generate_otp()
+    error = require_fields(payload, ["full_name", "email", "password", "company_code"])
+    if error: return error
+    company, err, code = _find_company(payload)
+    if err: return err, code
+    email = payload["email"].strip().lower(); otp = _generate_otp()
+    if User.query.filter_by(email=email, company_id=company.id).first(): return jsonify({"message": "Email already registered"}), 409
     try:
         _send_email_otp(email, otp, "registration")
-        _set_otp("register", email, otp, payload={"full_name": full_name, "password": password, "role": role_value})
+        OtpVerification.query.filter_by(email=email, company_id=company.id, purpose="register", verified=False).delete()
+        db.session.add(OtpVerification(company_id=company.id, email=email, otp=otp, purpose="register", expires_at=datetime.now(timezone.utc)+timedelta(minutes=OTP_TTL_MINUTES), verified=False)); db.session.commit()
     except Exception as exc:
-        return jsonify({"message": "Failed to send OTP", "error": str(exc)}), 500
-
+        db.session.rollback(); logger.exception("OTP send failed"); return jsonify({"message": "Failed to send OTP", "error": str(exc)}), 500
     return jsonify({"message": "OTP sent to your email"}), 200
 
+@auth_bp.post('/verify-otp')
+def verify_register_otp():
+    payload = request.get_json() or {}
+    error = require_fields(payload, ["email", "otp", "company_code"])
+    if error: return error
+    company, err, code = _find_company(payload)
+    if err: return err, code
+    row = OtpVerification.query.filter_by(company_id=company.id, email=payload["email"].strip().lower(), otp=payload["otp"].strip(), purpose="register", verified=False).order_by(OtpVerification.created_at.desc()).first()
+    if not row or datetime.now(timezone.utc) > row.expires_at: return jsonify({"message": "Invalid or expired OTP"}), 400
+    row.verified = True; db.session.commit(); return jsonify({"message": "OTP verified"}), 200
 
-@auth_bp.post("/register")
+@auth_bp.post('/register')
 def register():
     payload = request.get_json() or {}
-    error = require_fields(payload, ["email", "otp"])
-    if error:
-        return error
-
+    error = require_fields(payload, ["full_name", "email", "password", "otp", "company_code"])
+    if error: return error
+    company, err, code = _find_company(payload)
+    if err: return err, code
     email = payload["email"].strip().lower()
-    otp = payload["otp"].strip()
-
-    valid, result = _verify_otp("register", email, otp)
-    if not valid:
-        return jsonify({"message": result}), 400
-
-    register_payload = result["payload"]
-
+    row = OtpVerification.query.filter_by(company_id=company.id, email=email, otp=payload["otp"].strip(), purpose="register", verified=True).order_by(OtpVerification.created_at.desc()).first()
+    if not row or datetime.now(timezone.utc) > row.expires_at: return jsonify({"message": "OTP verification required"}), 400
     try:
-        if User.query.filter_by(email=email).first():
-            OTP_STORE.pop(("register", email), None)
-            return jsonify({"message": "Email already registered"}), 409
+        if User.query.filter_by(email=email, company_id=company.id).first(): return jsonify({"message": "Email already registered"}), 409
+        db.session.add(User(full_name=payload["full_name"].strip(), email=email, password_hash=bcrypt.hashpw(payload["password"].encode(), bcrypt.gensalt()).decode(), role=UserRole.accountant, company_id=company.id, approval_status=UserApprovalStatus.pending, is_active=True))
+        db.session.delete(row); db.session.commit()
+    except IntegrityError: db.session.rollback(); return jsonify({"message": "Email already registered"}), 409
+    except SQLAlchemyError as exc: db.session.rollback(); return jsonify({"message": "Registration failed due to database error", "error": str(getattr(exc, 'orig', exc))}), 500
+    return jsonify({"message": "User registered successfully. Awaiting main admin approval."}), 201
 
-        password_hash = bcrypt.hashpw(register_payload["password"].encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-        user = User(
-            full_name=register_payload["full_name"],
-            email=email,
-            password_hash=password_hash,
-            role=UserRole(register_payload["role"]),
-        )
+@auth_bp.get('/admin/pending-accountants')
+@jwt_required()
+@admin_required
+def pending_accountants():
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or not actor.is_main_admin: return jsonify({"message":"Only main admin can view pending users"}), 403
+    users = User.query.filter_by(company_id=actor.company_id, role=UserRole.accountant, approval_status=UserApprovalStatus.pending).all()
+    return jsonify([{"id":u.id,"full_name":u.full_name,"email":u.email,"created_at":u.created_at.isoformat()} for u in users]), 200
 
-        db.session.add(user)
-        db.session.commit()
-        OTP_STORE.pop(("register", email), None)
-    except IntegrityError:
-        db.session.rollback()
-        return jsonify({"message": "Email already registered"}), 409
-    except SQLAlchemyError as exc:
-        db.session.rollback()
-        return jsonify({"message": "Registration failed due to database error", "error": str(getattr(exc, "orig", exc))}), 500
+@auth_bp.post('/admin/approve-accountant')
+@jwt_required()
+@admin_required
+def approve_accountant():
+    payload = request.get_json() or {}; error = require_fields(payload,["user_id"])
+    if error: return error
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or not actor.is_main_admin: return jsonify({"message":"Only main admin can approve users"}), 403
+    user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id, role=UserRole.accountant).first()
+    if not user: return jsonify({"message":"User not found"}), 404
+    user.approval_status = UserApprovalStatus.approved; user.approved_by = actor.id; user.approved_at = datetime.now(timezone.utc); user.is_active=True
+    db.session.commit(); return jsonify({"message":"Accountant approved"}), 200
 
-    return jsonify({"message": "User registered successfully"}), 201
+@auth_bp.post('/admin/reject-accountant')
+@jwt_required()
+@admin_required
+def reject_accountant():
+    payload = request.get_json() or {}; error = require_fields(payload,["user_id"])
+    if error: return error
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or not actor.is_main_admin: return jsonify({"message":"Only main admin can reject users"}), 403
+    user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id, role=UserRole.accountant).first()
+    if not user: return jsonify({"message":"User not found"}), 404
+    user.approval_status = UserApprovalStatus.rejected; user.approved_by = actor.id; user.approved_at = datetime.now(timezone.utc); user.is_active=False
+    db.session.commit(); return jsonify({"message":"Accountant rejected"}), 200
 
+@auth_bp.post('/admin/invite')
+@jwt_required()
+@admin_required
+def admin_invite():
+    payload = request.get_json() or {}; error = require_fields(payload,["email"])
+    if error: return error
+    inviter = User.query.get(int(get_jwt_identity()))
+    if not inviter or not inviter.is_main_admin: return jsonify({"message":"Only main admin can invite admins"}), 403
+    token = str(uuid.uuid4())
+    db.session.add(AdminInvite(company_id=inviter.company_id,email=payload["email"].strip().lower(),token=token,created_by=inviter.id,expires_at=datetime.now(timezone.utc)+timedelta(days=1),used=False)); db.session.commit()
+    return jsonify({"token":token,"invite_link":f"/admin/accept?token={token}"}), 201
 
-@auth_bp.post("/forgot-password/request-otp")
-def forgot_password_request_otp():
-    payload = request.get_json() or {}
-    error = require_fields(payload, ["email"])
-    if error:
-        return error
+@auth_bp.post('/admin/accept-invite')
+def accept_admin_invite():
+    payload = request.get_json() or {}; error = require_fields(payload,["token","full_name","password"])
+    if error: return error
+    invite = AdminInvite.query.filter_by(token=payload["token"].strip(), used=False).first()
+    if not invite or datetime.now(timezone.utc) > invite.expires_at: return jsonify({"message":"Invalid or expired invite"}), 400
+    if User.query.filter_by(email=invite.email, company_id=invite.company_id).first(): return jsonify({"message":"Email already registered"}), 409
+    db.session.add(User(full_name=payload["full_name"].strip(), email=invite.email, password_hash=bcrypt.hashpw(payload["password"].encode(), bcrypt.gensalt()).decode(), role=UserRole.admin, company_id=invite.company_id, approval_status=UserApprovalStatus.approved, is_active=True))
+    invite.used=True; db.session.commit(); return jsonify({"message":"Admin account created"}), 201
 
-    email = payload["email"].strip().lower()
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        return jsonify({"message": "User not found"}), 404
-
+@auth_bp.post('/forgot-password/send-otp')
+@auth_bp.post('/forgot-password/request-otp')
+def forgot_send_otp():
+    payload = request.get_json() or {}; error = require_fields(payload,["email","company_code"])
+    if error: return error
+    company, err, code = _find_company(payload)
+    if err: return err, code
+    email = payload["email"].strip().lower(); user = User.query.filter_by(email=email, company_id=company.id).first()
+    if not user: return jsonify({"message":"User not found"}),404
     otp = _generate_otp()
     try:
         _send_email_otp(email, otp, "password reset")
-        _set_otp("reset", email, otp)
-    except Exception as exc:
-        return jsonify({"message": "Failed to send OTP", "error": str(exc)}), 500
+        OtpVerification.query.filter_by(email=email, company_id=company.id, purpose="reset", verified=False).delete()
+        db.session.add(OtpVerification(company_id=company.id,email=email,otp=otp,purpose="reset",expires_at=datetime.now(timezone.utc)+timedelta(minutes=OTP_TTL_MINUTES),verified=False)); db.session.commit()
+    except Exception as exc: db.session.rollback(); logger.exception("Forgot OTP send failed"); return jsonify({"message":"Failed to send OTP","error":str(exc)}),500
+    return jsonify({"message":"OTP sent to your email"}),200
 
-    return jsonify({"message": "OTP sent to your email"}), 200
+@auth_bp.post('/forgot-password/verify-otp')
+def forgot_verify_otp():
+    payload = request.get_json() or {}; error = require_fields(payload,["email","otp","company_code"])
+    if error: return error
+    company, err, code = _find_company(payload)
+    if err: return err, code
+    row = OtpVerification.query.filter_by(company_id=company.id,email=payload["email"].strip().lower(),otp=payload["otp"].strip(),purpose="reset",verified=False).first()
+    if not row or datetime.now(timezone.utc) > row.expires_at: return jsonify({"message":"Invalid or expired OTP"}),400
+    row.verified=True; db.session.commit(); return jsonify({"message":"OTP verified"}),200
 
+@auth_bp.post('/forgot-password/reset')
+def forgot_reset_password():
+    payload = request.get_json() or {}; error = require_fields(payload,["email","otp","new_password","company_code"])
+    if error: return error
+    company, err, code = _find_company(payload)
+    if err: return err, code
+    email = payload["email"].strip().lower(); user = User.query.filter_by(email=email, company_id=company.id).first()
+    row = OtpVerification.query.filter_by(company_id=company.id,email=email,otp=payload["otp"].strip(),purpose="reset",verified=True).first()
+    if not user: return jsonify({"message":"User not found"}),404
+    if not row or datetime.now(timezone.utc) > row.expires_at: return jsonify({"message":"OTP verification required"}),400
+    user.password_hash = bcrypt.hashpw(payload["new_password"].encode(), bcrypt.gensalt()).decode(); db.session.delete(row); db.session.commit()
+    return jsonify({"message":"Password reset successful"}),200
 
-@auth_bp.post("/forgot-password/verify-otp")
-def forgot_password_verify_otp():
-    payload = request.get_json() or {}
-    error = require_fields(payload, ["email", "otp", "new_password"])
-    if error:
-        return error
-
-    email = payload["email"].strip().lower()
-    otp = payload["otp"].strip()
-    new_password = payload["new_password"]
-
-    if len(new_password) < 8:
-        return jsonify({"message": "Password must be at least 8 characters"}), 400
-
-    valid, result = _verify_otp("reset", email, otp)
-    if not valid:
-        return jsonify({"message": result}), 400
-
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        return jsonify({"message": "User not found"}), 404
-
-    try:
-        user.password_hash = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-        db.session.commit()
-        OTP_STORE.pop(("reset", email), None)
-    except SQLAlchemyError as exc:
-        db.session.rollback()
-        return jsonify({"message": "Password reset failed", "error": str(getattr(exc, "orig", exc))}), 500
-
-    return jsonify({"message": "Password reset successful"}), 200
-
-
-@auth_bp.post("/login")
+@auth_bp.post('/login')
 def login():
-    payload = request.get_json() or {}
-    error = require_fields(payload, ["email", "password"])
-    if error:
-        return error
-
-    user = User.query.filter_by(email=payload["email"].strip().lower()).first()
-    if not user or not bcrypt.checkpw(payload["password"].encode("utf-8"), user.password_hash.encode("utf-8")):
-        return jsonify({"message": "Invalid credentials"}), 401
-
-    if not user.is_active:
-        return jsonify({"message": "User is inactive"}), 403
-
-    token = create_access_token(identity=str(user.id), additional_claims={"role": user.role.value})
-    return jsonify({"access_token": token, "user": {"id": user.id, "full_name": user.full_name, "email": user.email, "role": user.role.value}}), 200
+    payload = request.get_json() or {}; error = require_fields(payload,["email","password","company_code"])
+    if error: return error
+    company, err, code = _find_company(payload)
+    if err: return err, code
+    user = User.query.filter_by(email=payload["email"].strip().lower(), company_id=company.id).first()
+    if not user or not bcrypt.checkpw(payload["password"].encode(), user.password_hash.encode()): return jsonify({"message":"Invalid credentials"}),401
+    if not company.is_active: return jsonify({"message":"Company is inactive"}),403
+    if not user.is_active: return jsonify({"message":"User is inactive"}),403
+    if user.role == UserRole.accountant and user.approval_status != UserApprovalStatus.approved: return jsonify({"message":"Account pending main admin approval"}),403
+    token = create_access_token(identity=str(user.id), additional_claims={"role":user.role.value,"company_id":company.id,"is_main_admin":user.is_main_admin})
+    return jsonify({"access_token":token,"user":{"id":user.id,"full_name":user.full_name,"email":user.email,"role":user.role.value,"company_code":company.company_code,"company_name":company.company_name,"approval_status":user.approval_status.value,"is_main_admin":user.is_main_admin}}),200
