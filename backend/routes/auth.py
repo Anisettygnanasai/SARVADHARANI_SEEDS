@@ -1,4 +1,4 @@
-import bcrypt, random, smtplib, uuid, logging
+import bcrypt, random, smtplib, uuid, logging, re
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from flask import Blueprint, current_app, jsonify, request
@@ -12,6 +12,13 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 logger = logging.getLogger(__name__)
 OTP_TTL_MINUTES = 10
 
+GMAIL_RE = re.compile(r"^[A-Za-z0-9._%+-]+@gmail\.com$")
+
+def _ensure_gmail(email: str):
+    if not GMAIL_RE.match(email):
+        return jsonify({"message": "Only Gmail addresses are allowed"}), 400
+    return None, None
+
 def _generate_otp() -> str: return f"{random.randint(0, 999999):06d}"
 
 def _send_email_otp(to_email: str, otp: str, purpose: str):
@@ -22,7 +29,23 @@ def _send_email_otp(to_email: str, otp: str, purpose: str):
     msg = EmailMessage(); msg["Subject"] = f"Your ERP {purpose} OTP"; msg["From"] = sender; msg["To"] = to_email
     msg.set_content(f"Your OTP is {otp}. It will expire in {OTP_TTL_MINUTES} minutes.")
     with smtplib.SMTP(host, port, timeout=20) as smtp:
-        if use_tls: smtp.starttls(); smtp.login(sender, password); smtp.send_message(msg)
+        if use_tls:
+            smtp.starttls()
+        smtp.login(sender, password)
+        smtp.send_message(msg)
+
+def _send_invite_email(to_email: str, token: str, company_name: str):
+    sender = current_app.config.get("MAIL_USERNAME"); password = current_app.config.get("MAIL_PASSWORD")
+    host = current_app.config.get("MAIL_SERVER", "smtp.gmail.com"); port = int(current_app.config.get("MAIL_PORT", 587)); use_tls = bool(current_app.config.get("MAIL_USE_TLS", True))
+    if not sender or not password: raise ValueError("Email service not configured. Set MAIL_USERNAME and MAIL_PASSWORD.")
+    base_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
+    msg = EmailMessage(); msg["Subject"] = f"Admin Invite for {company_name}"; msg["From"] = sender; msg["To"] = to_email
+    msg.set_content(f"You were invited as admin for {company_name}. Use this link to accept invite: {base_url}/admin/accept-invite?token={token}")
+    with smtplib.SMTP(host, port, timeout=20) as smtp:
+        if use_tls:
+            smtp.starttls()
+        smtp.login(sender, password)
+        smtp.send_message(msg)
 
 def _find_company(payload):
     code = payload.get("company_code", "").strip().upper()
@@ -75,6 +98,21 @@ def update_company(company_code):
     db.session.commit()
     return jsonify({"message": "Company updated"}), 200
 
+@auth_bp.delete('/admin/companies/<string:company_code>')
+@jwt_required()
+@admin_required
+def delete_company(company_code):
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or not actor.is_main_admin: return jsonify({"message": "Only main admin can manage companies"}), 403
+    company = Company.query.filter_by(company_code=company_code.upper()).first()
+    if not company: return jsonify({"message": "Company not found"}), 404
+    if actor.company_id == company.id: return jsonify({"message": "Main admin company cannot be deleted"}), 400
+    user_exists = User.query.filter_by(company_id=company.id).first()
+    if user_exists: return jsonify({"message": "Cannot delete company with users. Deactivate instead."}), 400
+    db.session.delete(company)
+    db.session.commit()
+    return jsonify({"message": "Company deleted"}), 200
+
 @auth_bp.post('/send-otp')
 @auth_bp.post('/register/request-otp')
 def send_register_otp():
@@ -83,7 +121,9 @@ def send_register_otp():
     if error: return error
     company, err, code = _find_company(payload)
     if err: return err, code
-    email = payload["email"].strip().lower(); otp = _generate_otp()
+    email = payload["email"].strip().lower(); err, code = _ensure_gmail(email)
+    if err: return err, code
+    otp = _generate_otp()
     if User.query.filter_by(email=email, company_id=company.id).first(): return jsonify({"message": "Email already registered"}), 409
     try:
         _send_email_otp(email, otp, "registration")
@@ -165,9 +205,24 @@ def admin_invite():
     if error: return error
     inviter = User.query.get(int(get_jwt_identity()))
     if not inviter or not inviter.is_main_admin: return jsonify({"message":"Only main admin can invite admins"}), 403
+    invite_email = payload["email"].strip().lower()
+    err, code = _ensure_gmail(invite_email)
+    if err: return err, code
+    company_id = inviter.company_id
+    if payload.get("company_code"):
+        target = Company.query.filter_by(company_code=payload["company_code"].strip().upper()).first()
+        if not target:
+            return jsonify({"message": "Company not found"}), 404
+        company_id = target.id
     token = str(uuid.uuid4())
-    db.session.add(AdminInvite(company_id=inviter.company_id,email=payload["email"].strip().lower(),token=token,created_by=inviter.id,expires_at=datetime.now(timezone.utc)+timedelta(days=1),used=False)); db.session.commit()
-    return jsonify({"token":token,"invite_link":f"/admin/accept?token={token}"}), 201
+    db.session.add(AdminInvite(company_id=company_id,email=invite_email,token=token,created_by=inviter.id,expires_at=datetime.now(timezone.utc)+timedelta(days=1),used=False)); db.session.commit()
+    try:
+        company = Company.query.get(company_id)
+        _send_invite_email(invite_email, token, company.company_name if company else "your company")
+    except Exception as exc:
+        logger.exception("Admin invite email send failed")
+        return jsonify({"message":"Invite created but email delivery failed","token":token,"error":str(exc)}), 201
+    return jsonify({"message":"Invite sent successfully","token":token,"invite_link":f"/admin/accept?token={token}"}), 201
 
 @auth_bp.post('/admin/accept-invite')
 def accept_admin_invite():
