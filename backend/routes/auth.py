@@ -223,15 +223,30 @@ def register():
     company, err, code = _find_company(payload)
     if err: return err, code
     email = payload["email"].strip().lower()
-    row = OtpVerification.query.filter_by(company_id=company.id, email=email, otp=payload["otp"].strip(), purpose="register", verified=True).order_by(OtpVerification.created_at.desc()).first()
-    if not row or datetime.now(timezone.utc) > row.expires_at: return jsonify({"message": "OTP verification required"}), 400
+
     try:
-        if User.query.filter_by(email=email, company_id=company.id).first(): return jsonify({"message": "Email already registered"}), 409
+        existing_user = User.query.filter_by(email=email, company_id=company.id).first()
+        if existing_user:
+            return jsonify({"message": "Account created successfully"}), 200
+
+        now_utc = datetime.now(timezone.utc)
+        verified_row = OtpVerification.query.filter_by(company_id=company.id, email=email, purpose="register", verified=True).order_by(OtpVerification.created_at.desc()).first()
+
+        if not verified_row or now_utc > verified_row.expires_at:
+            pending_row = OtpVerification.query.filter_by(company_id=company.id, email=email, otp=payload["otp"].strip(), purpose="register", verified=False).order_by(OtpVerification.created_at.desc()).first()
+            if not pending_row or now_utc > pending_row.expires_at:
+                return jsonify({"message": "OTP verification required"}), 400
+            pending_row.verified = True
+            verified_row = pending_row
+
         db.session.add(User(full_name=payload["full_name"].strip(), email=email, password_hash=bcrypt.hashpw(payload["password"].encode(), bcrypt.gensalt()).decode(), role=UserRole.accountant, company_id=company.id, approval_status=UserApprovalStatus.pending, is_active=True))
-        db.session.delete(row); db.session.commit()
-    except IntegrityError: db.session.rollback(); return jsonify({"message": "Email already registered"}), 409
-    except SQLAlchemyError as exc: db.session.rollback(); return jsonify({"message": "Registration failed due to database error", "error": str(getattr(exc, 'orig', exc))}), 500
-    return jsonify({"message": "User registered successfully. Awaiting main admin approval."}), 201
+        OtpVerification.query.filter_by(company_id=company.id, email=email, purpose="register").delete()
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback(); return jsonify({"message": "Email already registered"}), 409
+    except SQLAlchemyError as exc:
+        db.session.rollback(); return jsonify({"message": "Registration failed due to database error", "error": str(getattr(exc, 'orig', exc))}), 500
+    return jsonify({"message": "Account created successfully"}), 201
 
 @auth_bp.get('/admin/pending-accountants')
 @jwt_required()
