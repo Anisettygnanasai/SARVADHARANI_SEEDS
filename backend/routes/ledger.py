@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from models import db, Ledger, LedgerType
-from utils.decorators import roles_required
+from utils.decorators import roles_required, non_main_admin_required
 from utils.validators import require_fields, parse_decimal
 
 ledger_bp = Blueprint("ledger", __name__, url_prefix="/api/ledgers")
@@ -25,14 +25,16 @@ def serialize_ledger(ledger):
 
 @ledger_bp.get("")
 @jwt_required()
+@non_main_admin_required
 def list_ledgers():
-    ledgers = Ledger.query.order_by(Ledger.id.desc()).all()
+    ledgers = Ledger.query.filter_by(company_id=get_jwt().get("company_id")).order_by(Ledger.id.desc()).all()
     return jsonify([serialize_ledger(l) for l in ledgers])
 
 
 @ledger_bp.post("")
 @jwt_required()
 @roles_required("admin", "accountant")
+@non_main_admin_required
 def create_ledger():
     payload = request.get_json() or {}
     error = require_fields(payload, ["name", "ledger_code", "ledger_type", "opening_balance"])
@@ -58,6 +60,7 @@ def create_ledger():
         email=payload.get("email"),
         address=payload.get("address"),
         created_by_user_id=int(get_jwt_identity()),
+        company_id=get_jwt().get("company_id"),
     )
     db.session.add(ledger)
     db.session.commit()
@@ -68,7 +71,7 @@ def create_ledger():
 @jwt_required()
 @roles_required("admin", "accountant")
 def update_ledger(ledger_id):
-    ledger = Ledger.query.get_or_404(ledger_id)
+    ledger = Ledger.query.filter_by(id=ledger_id, company_id=get_jwt().get("company_id")).first_or_404()
     payload = request.get_json() or {}
 
     if "name" in payload:
@@ -97,7 +100,7 @@ def update_ledger(ledger_id):
 @jwt_required()
 @roles_required("admin")
 def delete_ledger(ledger_id):
-    ledger = Ledger.query.get_or_404(ledger_id)
+    ledger = Ledger.query.filter_by(id=ledger_id, company_id=get_jwt().get("company_id")).first_or_404()
     db.session.delete(ledger)
     db.session.commit()
     return jsonify({"message": "Ledger deleted successfully"})

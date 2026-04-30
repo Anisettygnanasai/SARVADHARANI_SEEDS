@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { login } from "../services/authService";
+import { fetchCompanies, login } from "../services/authService";
 
 export default function LoginPage({ onLogin }) {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "", company_code: "" });
   const [error, setError] = useState("");
+  const [companies, setCompanies] = useState([]);
+
+  useEffect(() => { fetchCompanies().then(({data}) => setCompanies(data || [])).catch(() => setCompanies([])); }, []);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -25,6 +28,7 @@ export default function LoginPage({ onLogin }) {
         <h2 className="mb-1 text-2xl font-bold">Welcome back</h2>
         <p className="mb-4 text-sm text-slate-500">Sign in to continue your accounting workflow.</p>
         {error && <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+        <select className="input-premium mb-3" value={form.company_code} onChange={(e) => setForm({ ...form, company_code: e.target.value })}><option value="">Select Company</option>{companies.map((c) => <option key={c.company_code} value={c.company_code}>{c.company_name} ({c.company_code})</option>)}</select>
         <input className="input-premium mb-3" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <input className="input-premium mb-3" type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         <button className="btn-primary w-full">Sign In</button>
