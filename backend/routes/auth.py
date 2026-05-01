@@ -307,7 +307,7 @@ def reject_accountant():
 @admin_required
 def pending_users():
     actor = User.query.get(int(get_jwt_identity()))
-    if not actor or actor.approval_status != UserApprovalStatus.approved or actor.status != "approved":
+    if not actor or actor.approval_status != UserApprovalStatus.approved:
         return jsonify({"message": "Only approved admin can view pending users"}), 403
     users = User.query.filter_by(company_id=actor.company_id, approval_status=UserApprovalStatus.pending).all()
     return jsonify([{"id": u.id, "full_name": u.full_name, "email": u.email, "role": u.role.value, "status": u.status, "created_at": u.created_at.isoformat()} for u in users]), 200
@@ -320,7 +320,7 @@ def approve_user():
     error = require_fields(payload, ["user_id"])
     if error: return error
     actor = User.query.get(int(get_jwt_identity()))
-    if not actor or actor.approval_status != UserApprovalStatus.approved or actor.status != "approved":
+    if not actor or actor.approval_status != UserApprovalStatus.approved:
         return jsonify({"message": "Only approved admin can approve users"}), 403
     user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id).first()
     if not user: return jsonify({"message": "User not found"}), 404
@@ -340,7 +340,7 @@ def reject_user():
     error = require_fields(payload, ["user_id"])
     if error: return error
     actor = User.query.get(int(get_jwt_identity()))
-    if not actor or actor.approval_status != UserApprovalStatus.approved or actor.status != "approved":
+    if not actor or actor.approval_status != UserApprovalStatus.approved:
         return jsonify({"message": "Only approved admin can reject users"}), 403
     user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id).first()
     if not user: return jsonify({"message": "User not found"}), 404
@@ -398,7 +398,8 @@ def admin_pending_users():
     actor = User.query.get(int(get_jwt_identity()))
     if not actor or not actor.is_main_admin:
         return jsonify({"message": "Only main admin can view pending users"}), 403
-    users = User.query.filter_by(company_id=actor.company_id, approval_status=UserApprovalStatus.pending).order_by(User.created_at.desc()).all()
+    users = User.query.filter(User.company_id == actor.company_id, User.approval_status == UserApprovalStatus.pending).order_by(User.created_at.desc()).all()
+    print("Pending users:", users)
     return jsonify([{"id": u.id, "full_name": u.full_name, "email": u.email, "role": u.role.value, "created_at": u.created_at.isoformat()} for u in users]), 200
 
 @admin_users_bp.get('/users')
@@ -406,7 +407,7 @@ def admin_pending_users():
 @admin_required
 def admin_list_users():
     actor = User.query.get(int(get_jwt_identity()))
-    if not actor or actor.approval_status != UserApprovalStatus.approved or actor.status != "approved":
+    if not actor or actor.approval_status != UserApprovalStatus.approved:
         return jsonify({"message": "Only approved admin can view users"}), 403
     requested_company_id = request.args.get("company_id", type=int)
     company_id = actor.company_id
@@ -475,7 +476,7 @@ def admin_update_role():
     error = require_fields(payload, ["user_id", "new_role"])
     if error: return error
     actor = User.query.get(int(get_jwt_identity()))
-    if not actor or actor.approval_status != UserApprovalStatus.approved or actor.status != "approved":
+    if not actor or actor.approval_status != UserApprovalStatus.approved:
         return jsonify({"message": "Only approved admin can update roles"}), 403
     user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id).first()
     if not user: return jsonify({"message": "User not found"}), 404
@@ -562,6 +563,6 @@ def login():
     if not user or not bcrypt.checkpw(payload["password"].encode(), user.password_hash.encode()): return jsonify({"message":"Invalid credentials"}),401
     if not company.is_active: return jsonify({"message":"Company is inactive"}),403
     if not user.is_active: return jsonify({"message":"User is inactive"}),403
-    if user.approval_status != UserApprovalStatus.approved or user.status != "approved": return jsonify({"message":"Your account is pending admin approval"}),403
+    if user.approval_status != UserApprovalStatus.approved: return jsonify({"message":"Account pending admin approval"}),403
     token = create_access_token(identity=str(user.id), additional_claims={"role":user.role.value,"company_id":company.id,"is_main_admin":user.is_main_admin})
     return jsonify({"access_token":token,"user":{"id":user.id,"full_name":user.full_name,"email":user.email,"role":user.role.value,"company_code":company.company_code,"company_name":company.company_name,"approval_status":user.approval_status.value,"is_main_admin":user.is_main_admin}}),200

@@ -138,3 +138,6 @@ SELECT c.id, 'Company Main Admin', 'gnanianisetty2005@gmail.com', '$2b$12$Y1DrYD
 FROM companies c
 WHERE c.company_code = 'ANITS1'
 ON CONFLICT DO NOTHING;
+
+
+UPDATE users SET status = approval_status::text WHERE status IS DISTINCT FROM approval_status::text;
