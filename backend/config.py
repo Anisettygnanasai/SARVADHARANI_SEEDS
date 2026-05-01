@@ -15,10 +15,14 @@ class Config:
     DB_PORT = os.getenv("DB_PORT", "5432")
     DB_NAME = os.getenv("DB_NAME", "accounting_app")
 
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL",
-        f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD_ENCODED}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
-    )
+    _DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+    if _DATABASE_URL:
+        # Render often provides postgres://..., SQLAlchemy expects postgresql://...
+        if _DATABASE_URL.startswith("postgres://"):
+            _DATABASE_URL = _DATABASE_URL.replace("postgres://", "postgresql://", 1)
+        SQLALCHEMY_DATABASE_URI = _DATABASE_URL
+    else:
+        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD_ENCODED}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-this-in-production")
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=8)
