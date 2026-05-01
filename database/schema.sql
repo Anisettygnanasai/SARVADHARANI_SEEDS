@@ -126,14 +126,15 @@ BEGIN
 END $$;
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_main_admin BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'pending';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS approval_status user_approval_status NOT NULL DEFAULT 'pending';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_by BIGINT REFERENCES users(id);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS idx_users_company_approval ON users(company_id, approval_status);
 
-INSERT INTO users (company_id, full_name, email, password_hash, role, is_active, is_main_admin, approval_status)
-SELECT c.id, 'Company Main Admin', 'gnanianisetty2005@gmail.com', '$2b$12$Y1DrYDkaDuYWvCgldbzK5eSQhzsOfpIflUY0skzgcuJFCpw3XP7NS', 'admin', TRUE, TRUE, 'approved'
+INSERT INTO users (company_id, full_name, email, password_hash, role, is_active, is_main_admin, approval_status, status)
+SELECT c.id, 'Company Main Admin', 'gnanianisetty2005@gmail.com', '$2b$12$Y1DrYDkaDuYWvCgldbzK5eSQhzsOfpIflUY0skzgcuJFCpw3XP7NS', 'admin', TRUE, TRUE, 'approved', 'approved'
 FROM companies c
 WHERE c.company_code = 'ANITS1'
 ON CONFLICT DO NOTHING;
