@@ -9,6 +9,7 @@ from utils.validators import require_fields
 from utils.decorators import admin_required
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
+admin_users_bp = Blueprint("admin_users", __name__, url_prefix="/api/admin")
 logger = logging.getLogger(__name__)
 OTP_TTL_MINUTES = 10
 
@@ -211,9 +212,23 @@ def verify_register_otp():
     if error: return error
     company, err, code = _find_company(payload)
     if err: return err, code
-    row = OtpVerification.query.filter_by(company_id=company.id, email=payload["email"].strip().lower(), otp=payload["otp"].strip(), purpose="register", verified=False).order_by(OtpVerification.created_at.desc()).first()
+    email = payload["email"].strip().lower()
+    row = OtpVerification.query.filter_by(company_id=company.id, email=email, otp=payload["otp"].strip(), purpose="register", verified=False).order_by(OtpVerification.created_at.desc()).first()
     if not row or datetime.now(timezone.utc) > row.expires_at: return jsonify({"message": "Invalid or expired OTP"}), 400
-    row.verified = True; db.session.commit(); return jsonify({"message": "OTP verified"}), 200
+    row.verified = True
+
+    should_create_user = all(payload.get(k) for k in ["full_name", "password"])
+    if should_create_user and not User.query.filter_by(email=email, company_id=company.id).first():
+        requested_role = (payload.get("role") or "accountant").strip().lower()
+        if requested_role not in {"admin", "accountant"}:
+            return jsonify({"message": "Invalid role. Allowed roles are admin or accountant"}), 400
+        db.session.add(User(full_name=payload["full_name"].strip(), email=email, password_hash=bcrypt.hashpw(payload["password"].encode(), bcrypt.gensalt()).decode(), role=UserRole(requested_role), company_id=company.id, status="pending", approval_status=UserApprovalStatus.pending, is_active=True))
+        OtpVerification.query.filter_by(company_id=company.id, email=email, purpose="register").delete()
+        db.session.commit()
+        return jsonify({"message": "Account created successfully"}), 201
+
+    db.session.commit()
+    return jsonify({"message": "OTP verified"}), 200
 
 @auth_bp.post('/register')
 def register():
@@ -239,7 +254,10 @@ def register():
             pending_row.verified = True
             verified_row = pending_row
 
-        db.session.add(User(full_name=payload["full_name"].strip(), email=email, password_hash=bcrypt.hashpw(payload["password"].encode(), bcrypt.gensalt()).decode(), role=UserRole.accountant, company_id=company.id, approval_status=UserApprovalStatus.pending, is_active=True))
+        requested_role = (payload.get("role") or "accountant").strip().lower()
+        if requested_role not in {"admin", "accountant"}:
+            return jsonify({"message": "Invalid role. Allowed roles are admin or accountant"}), 400
+        db.session.add(User(full_name=payload["full_name"].strip(), email=email, password_hash=bcrypt.hashpw(payload["password"].encode(), bcrypt.gensalt()).decode(), role=UserRole(requested_role), company_id=company.id, status="pending", approval_status=UserApprovalStatus.pending, is_active=True))
         OtpVerification.query.filter_by(company_id=company.id, email=email, purpose="register").delete()
         db.session.commit()
     except IntegrityError:
@@ -267,7 +285,7 @@ def approve_accountant():
     if not actor or not actor.is_main_admin: return jsonify({"message":"Only main admin can approve users"}), 403
     user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id, role=UserRole.accountant).first()
     if not user: return jsonify({"message":"User not found"}), 404
-    user.approval_status = UserApprovalStatus.approved; user.approved_by = actor.id; user.approved_at = datetime.now(timezone.utc); user.is_active=True
+    user.approval_status = UserApprovalStatus.approved; user.status = "approved"; user.approved_by = actor.id; user.approved_at = datetime.now(timezone.utc); user.is_active=True
     db.session.commit(); return jsonify({"message":"Accountant approved"}), 200
 
 @auth_bp.post('/admin/reject-accountant')
@@ -280,8 +298,59 @@ def reject_accountant():
     if not actor or not actor.is_main_admin: return jsonify({"message":"Only main admin can reject users"}), 403
     user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id, role=UserRole.accountant).first()
     if not user: return jsonify({"message":"User not found"}), 404
-    user.approval_status = UserApprovalStatus.rejected; user.approved_by = actor.id; user.approved_at = datetime.now(timezone.utc); user.is_active=False
+    user.approval_status = UserApprovalStatus.rejected; user.status = "rejected"; user.approved_by = actor.id; user.approved_at = datetime.now(timezone.utc); user.is_active=False
     db.session.commit(); return jsonify({"message":"Accountant rejected"}), 200
+
+
+@auth_bp.get('/admin/pending-users')
+@jwt_required()
+@admin_required
+def pending_users():
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or actor.approval_status != UserApprovalStatus.approved or actor.status != "approved":
+        return jsonify({"message": "Only approved admin can view pending users"}), 403
+    users = User.query.filter_by(company_id=actor.company_id, approval_status=UserApprovalStatus.pending).all()
+    return jsonify([{"id": u.id, "full_name": u.full_name, "email": u.email, "role": u.role.value, "status": u.status, "created_at": u.created_at.isoformat()} for u in users]), 200
+
+@auth_bp.post('/admin/approve-user')
+@jwt_required()
+@admin_required
+def approve_user():
+    payload = request.get_json() or {}
+    error = require_fields(payload, ["user_id"])
+    if error: return error
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or actor.approval_status != UserApprovalStatus.approved or actor.status != "approved":
+        return jsonify({"message": "Only approved admin can approve users"}), 403
+    user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id).first()
+    if not user: return jsonify({"message": "User not found"}), 404
+    user.approval_status = UserApprovalStatus.approved
+    user.status = "approved"
+    user.approved_by = actor.id
+    user.approved_at = datetime.now(timezone.utc)
+    user.is_active = True
+    db.session.commit()
+    return jsonify({"message": "User approved"}), 200
+
+@auth_bp.post('/admin/reject-user')
+@jwt_required()
+@admin_required
+def reject_user():
+    payload = request.get_json() or {}
+    error = require_fields(payload, ["user_id"])
+    if error: return error
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or actor.approval_status != UserApprovalStatus.approved or actor.status != "approved":
+        return jsonify({"message": "Only approved admin can reject users"}), 403
+    user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id).first()
+    if not user: return jsonify({"message": "User not found"}), 404
+    user.approval_status = UserApprovalStatus.rejected
+    user.status = "rejected"
+    user.approved_by = actor.id
+    user.approved_at = datetime.now(timezone.utc)
+    user.is_active = False
+    db.session.commit()
+    return jsonify({"message": "User rejected"}), 200
 
 @auth_bp.post('/admin/invite')
 @jwt_required()
@@ -317,8 +386,131 @@ def accept_admin_invite():
     invite = AdminInvite.query.filter_by(token=payload["token"].strip(), used=False).first()
     if not invite or datetime.now(timezone.utc) > invite.expires_at: return jsonify({"message":"Invalid or expired invite"}), 400
     if User.query.filter_by(email=invite.email, company_id=invite.company_id).first(): return jsonify({"message":"Email already registered"}), 409
-    db.session.add(User(full_name=payload["full_name"].strip(), email=invite.email, password_hash=bcrypt.hashpw(payload["password"].encode(), bcrypt.gensalt()).decode(), role=UserRole.admin, company_id=invite.company_id, approval_status=UserApprovalStatus.approved, is_active=True))
+    db.session.add(User(full_name=payload["full_name"].strip(), email=invite.email, password_hash=bcrypt.hashpw(payload["password"].encode(), bcrypt.gensalt()).decode(), role=UserRole.admin, company_id=invite.company_id, status="approved", approval_status=UserApprovalStatus.approved, is_active=True))
     invite.used=True; db.session.commit(); return jsonify({"message":"Admin account created"}), 201
+
+
+
+@admin_users_bp.get('/pending-users')
+@jwt_required()
+@admin_required
+def admin_pending_users():
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or not actor.is_main_admin:
+        return jsonify({"message": "Only main admin can view pending users"}), 403
+    users = User.query.filter_by(company_id=actor.company_id, approval_status=UserApprovalStatus.pending).order_by(User.created_at.desc()).all()
+    return jsonify([{"id": u.id, "full_name": u.full_name, "email": u.email, "role": u.role.value, "created_at": u.created_at.isoformat()} for u in users]), 200
+
+@admin_users_bp.get('/users')
+@jwt_required()
+@admin_required
+def admin_list_users():
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or actor.approval_status != UserApprovalStatus.approved or actor.status != "approved":
+        return jsonify({"message": "Only approved admin can view users"}), 403
+    requested_company_id = request.args.get("company_id", type=int)
+    company_id = actor.company_id
+    if requested_company_id is not None and requested_company_id != actor.company_id:
+        return jsonify({"message": "Cross-company access denied"}), 403
+    users = User.query.filter_by(company_id=company_id).order_by(User.created_at.desc()).all()
+    return jsonify([{"id": u.id, "name": u.full_name, "email": u.email, "role": u.role.value, "status": u.status, "approval_status": u.approval_status.value, "is_main_admin": u.is_main_admin} for u in users]), 200
+
+@admin_users_bp.post('/approve-user')
+@jwt_required()
+@admin_required
+def admin_approve_user():
+    payload = request.get_json() or {}
+    error = require_fields(payload, ["user_id"])
+    if error: return error
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or not actor.is_main_admin:
+        return jsonify({"message": "Only main admin can approve or reject users"}), 403
+    user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id).first()
+    if not user: return jsonify({"message": "User not found"}), 404
+    action = str(payload.get("action", "approve")).strip().lower()
+    if action not in {"approve", "reject"}:
+        return jsonify({"message": "Invalid action. Use approve or reject"}), 400
+    if action == "approve":
+        user.approval_status = UserApprovalStatus.approved
+        user.status = "approved"
+        user.is_active = True
+        message = "User approved"
+    else:
+        user.approval_status = UserApprovalStatus.rejected
+        user.status = "rejected"
+        user.is_active = False
+        message = "User rejected"
+    user.approved_by = actor.id
+    user.approved_at = datetime.now(timezone.utc)
+    db.session.commit()
+    return jsonify({"message": message}), 200
+
+@admin_users_bp.post('/reject-user')
+@jwt_required()
+@admin_required
+def admin_reject_user():
+    payload = request.get_json() or {}
+    payload["action"] = "reject"
+    request_payload = payload
+    error = require_fields(request_payload, ["user_id"])
+    if error: return error
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or not actor.is_main_admin:
+        return jsonify({"message": "Only main admin can approve or reject users"}), 403
+    user = User.query.filter_by(id=request_payload["user_id"], company_id=actor.company_id).first()
+    if not user: return jsonify({"message": "User not found"}), 404
+    user.approval_status = UserApprovalStatus.rejected
+    user.status = "rejected"
+    user.approved_by = actor.id
+    user.approved_at = datetime.now(timezone.utc)
+    user.is_active = False
+    db.session.commit()
+    return jsonify({"message": "User rejected"}), 200
+
+@admin_users_bp.put('/update-role')
+@jwt_required()
+@admin_required
+def admin_update_role():
+    payload = request.get_json() or {}
+    error = require_fields(payload, ["user_id", "new_role"])
+    if error: return error
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or actor.approval_status != UserApprovalStatus.approved or actor.status != "approved":
+        return jsonify({"message": "Only approved admin can update roles"}), 403
+    user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id).first()
+    if not user: return jsonify({"message": "User not found"}), 404
+    if user.is_main_admin:
+        return jsonify({"message": "Cannot modify main admin"}), 400
+    new_role = str(payload["new_role"]).strip().lower()
+    if new_role not in {"admin", "accountant"}:
+        return jsonify({"message": "Invalid role. Allowed roles are admin or accountant"}), 400
+    user.role = UserRole(new_role)
+    db.session.commit()
+    return jsonify({"message": "User role updated"}), 200
+
+@admin_users_bp.delete('/delete-user/<int:user_id>')
+@jwt_required()
+@admin_required
+def admin_delete_user(user_id):
+    actor = User.query.get(int(get_jwt_identity()))
+    if not actor or not actor.is_main_admin:
+        return jsonify({"message": "Only main admin can delete users"}), 403
+    user = User.query.filter_by(id=user_id, company_id=actor.company_id).first()
+    if not user: return jsonify({"message": "User not found"}), 404
+    if user.is_main_admin:
+        return jsonify({"message": "Cannot delete main admin"}), 400
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"message": "User deleted successfully"}), 200
+
+@admin_users_bp.delete('/delete-user')
+@jwt_required()
+@admin_required
+def admin_delete_user_backward_compat():
+    payload = request.get_json() or {}
+    error = require_fields(payload, ["user_id"])
+    if error: return error
+    return admin_delete_user(int(payload["user_id"]))
 
 @auth_bp.post('/forgot-password/send-otp')
 @auth_bp.post('/forgot-password/request-otp')
@@ -370,6 +562,6 @@ def login():
     if not user or not bcrypt.checkpw(payload["password"].encode(), user.password_hash.encode()): return jsonify({"message":"Invalid credentials"}),401
     if not company.is_active: return jsonify({"message":"Company is inactive"}),403
     if not user.is_active: return jsonify({"message":"User is inactive"}),403
-    if user.role == UserRole.accountant and user.approval_status != UserApprovalStatus.approved: return jsonify({"message":"Account pending main admin approval"}),403
+    if user.approval_status != UserApprovalStatus.approved or user.status != "approved": return jsonify({"message":"Your account is pending admin approval"}),403
     token = create_access_token(identity=str(user.id), additional_claims={"role":user.role.value,"company_id":company.id,"is_main_admin":user.is_main_admin})
     return jsonify({"access_token":token,"user":{"id":user.id,"full_name":user.full_name,"email":user.email,"role":user.role.value,"company_code":company.company_code,"company_name":company.company_name,"approval_status":user.approval_status.value,"is_main_admin":user.is_main_admin}}),200
