@@ -63,6 +63,7 @@ class User(db.Model, TimestampMixin):
     approval_status = db.Column(db.Enum(UserApprovalStatus, name="user_approval_status"), nullable=False, default=UserApprovalStatus.pending)
     approved_by = db.Column(db.BigInteger, db.ForeignKey("users.id"))
     approved_at = db.Column(db.DateTime(timezone=True))
+    company = db.relationship("Company", backref=db.backref("users", lazy=True))
 
 
 class AdminInvite(db.Model):

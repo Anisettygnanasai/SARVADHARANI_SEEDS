@@ -322,8 +322,10 @@ def approve_user():
     actor = User.query.get(int(get_jwt_identity()))
     if not actor or actor.approval_status != UserApprovalStatus.approved:
         return jsonify({"message": "Only approved admin can approve users"}), 403
-    user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id).first()
+    user = User.query.filter_by(id=payload["user_id"]).first()
     if not user: return jsonify({"message": "User not found"}), 404
+    if not actor.is_main_admin and user.company_id != actor.company_id:
+        return jsonify({"message": "Cross-company access denied"}), 403
     user.approval_status = UserApprovalStatus.approved
     user.status = "approved"
     user.approved_by = actor.id
@@ -342,8 +344,10 @@ def reject_user():
     actor = User.query.get(int(get_jwt_identity()))
     if not actor or actor.approval_status != UserApprovalStatus.approved:
         return jsonify({"message": "Only approved admin can reject users"}), 403
-    user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id).first()
+    user = User.query.filter_by(id=payload["user_id"]).first()
     if not user: return jsonify({"message": "User not found"}), 404
+    if not actor.is_main_admin and user.company_id != actor.company_id:
+        return jsonify({"message": "Cross-company access denied"}), 403
     user.approval_status = UserApprovalStatus.rejected
     user.status = "rejected"
     user.approved_by = actor.id
@@ -396,11 +400,15 @@ def accept_admin_invite():
 @admin_required
 def admin_pending_users():
     actor = User.query.get(int(get_jwt_identity()))
-    if not actor or not actor.is_main_admin:
-        return jsonify({"message": "Only main admin can view pending users"}), 403
-    users = User.query.filter(User.company_id == actor.company_id, User.approval_status == UserApprovalStatus.pending).order_by(User.created_at.desc()).all()
-    print("Pending users:", users)
-    return jsonify([{"id": u.id, "full_name": u.full_name, "email": u.email, "role": u.role.value, "created_at": u.created_at.isoformat()} for u in users]), 200
+    if not actor:
+        return jsonify({"message": "User not found"}), 404
+    if actor.is_main_admin:
+        users = User.query.filter(User.approval_status == UserApprovalStatus.pending).order_by(User.created_at.desc()).all()
+    else:
+        users = User.query.filter(User.company_id == actor.company_id, User.approval_status == UserApprovalStatus.pending).order_by(User.created_at.desc()).all()
+    print("Is main admin:", actor.is_main_admin)
+    print("Fetched users:", len(users))
+    return jsonify([{"id": u.id, "full_name": u.full_name, "email": u.email, "role": u.role.value, "company_id": u.company_id, "company_name": u.company.company_name if u.company else None, "created_at": u.created_at.isoformat()} for u in users]), 200
 
 @admin_users_bp.get('/users')
 @jwt_required()
@@ -410,11 +418,16 @@ def admin_list_users():
     if not actor or actor.approval_status != UserApprovalStatus.approved:
         return jsonify({"message": "Only approved admin can view users"}), 403
     requested_company_id = request.args.get("company_id", type=int)
-    company_id = actor.company_id
-    if requested_company_id is not None and requested_company_id != actor.company_id:
-        return jsonify({"message": "Cross-company access denied"}), 403
-    users = User.query.filter_by(company_id=company_id).order_by(User.created_at.desc()).all()
-    return jsonify([{"id": u.id, "name": u.full_name, "email": u.email, "role": u.role.value, "status": u.status, "approval_status": u.approval_status.value, "is_main_admin": u.is_main_admin} for u in users]), 200
+    query = User.query
+    if actor.is_main_admin:
+        if requested_company_id is not None:
+            query = query.filter(User.company_id == requested_company_id)
+    else:
+        if requested_company_id is not None and requested_company_id != actor.company_id:
+            return jsonify({"message": "Cross-company access denied"}), 403
+        query = query.filter(User.company_id == actor.company_id)
+    users = query.order_by(User.created_at.desc()).all()
+    return jsonify([{"id": u.id, "name": u.full_name, "email": u.email, "role": u.role.value, "status": u.status, "approval_status": u.approval_status.value, "is_main_admin": u.is_main_admin, "company_id": u.company_id, "company_name": u.company.company_name if u.company else None} for u in users]), 200
 
 @admin_users_bp.post('/approve-user')
 @jwt_required()
@@ -424,10 +437,12 @@ def admin_approve_user():
     error = require_fields(payload, ["user_id"])
     if error: return error
     actor = User.query.get(int(get_jwt_identity()))
-    if not actor or not actor.is_main_admin:
-        return jsonify({"message": "Only main admin can approve or reject users"}), 403
-    user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id).first()
+    if not actor or actor.approval_status != UserApprovalStatus.approved:
+        return jsonify({"message": "Only approved admin can approve or reject users"}), 403
+    user = User.query.filter_by(id=payload["user_id"]).first()
     if not user: return jsonify({"message": "User not found"}), 404
+    if not actor.is_main_admin and user.company_id != actor.company_id:
+        return jsonify({"message": "Cross-company access denied"}), 403
     action = str(payload.get("action", "approve")).strip().lower()
     if action not in {"approve", "reject"}:
         return jsonify({"message": "Invalid action. Use approve or reject"}), 400
@@ -456,10 +471,12 @@ def admin_reject_user():
     error = require_fields(request_payload, ["user_id"])
     if error: return error
     actor = User.query.get(int(get_jwt_identity()))
-    if not actor or not actor.is_main_admin:
-        return jsonify({"message": "Only main admin can approve or reject users"}), 403
-    user = User.query.filter_by(id=request_payload["user_id"], company_id=actor.company_id).first()
+    if not actor or actor.approval_status != UserApprovalStatus.approved:
+        return jsonify({"message": "Only approved admin can approve or reject users"}), 403
+    user = User.query.filter_by(id=request_payload["user_id"]).first()
     if not user: return jsonify({"message": "User not found"}), 404
+    if not actor.is_main_admin and user.company_id != actor.company_id:
+        return jsonify({"message": "Cross-company access denied"}), 403
     user.approval_status = UserApprovalStatus.rejected
     user.status = "rejected"
     user.approved_by = actor.id
@@ -478,8 +495,10 @@ def admin_update_role():
     actor = User.query.get(int(get_jwt_identity()))
     if not actor or actor.approval_status != UserApprovalStatus.approved:
         return jsonify({"message": "Only approved admin can update roles"}), 403
-    user = User.query.filter_by(id=payload["user_id"], company_id=actor.company_id).first()
+    user = User.query.filter_by(id=payload["user_id"]).first()
     if not user: return jsonify({"message": "User not found"}), 404
+    if not actor.is_main_admin and user.company_id != actor.company_id:
+        return jsonify({"message": "Cross-company access denied"}), 403
     if user.is_main_admin:
         return jsonify({"message": "Cannot modify main admin"}), 400
     new_role = str(payload["new_role"]).strip().lower()
@@ -494,10 +513,12 @@ def admin_update_role():
 @admin_required
 def admin_delete_user(user_id):
     actor = User.query.get(int(get_jwt_identity()))
-    if not actor or not actor.is_main_admin:
-        return jsonify({"message": "Only main admin can delete users"}), 403
-    user = User.query.filter_by(id=user_id, company_id=actor.company_id).first()
+    if not actor or actor.approval_status != UserApprovalStatus.approved:
+        return jsonify({"message": "Only approved admin can delete users"}), 403
+    user = User.query.filter_by(id=user_id).first()
     if not user: return jsonify({"message": "User not found"}), 404
+    if not actor.is_main_admin and user.company_id != actor.company_id:
+        return jsonify({"message": "Cross-company access denied"}), 403
     if user.is_main_admin:
         return jsonify({"message": "Cannot delete main admin"}), 400
     db.session.delete(user)
