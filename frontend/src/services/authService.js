@@ -16,3 +16,9 @@ export const register = (payload) => api.post("/auth/register", payload);
 export const requestForgotPasswordOtp = (payload) => api.post("/auth/forgot-password/request-otp", payload);
 export const verifyForgotPasswordOtp = (payload) => api.post("/auth/forgot-password/verify-otp", payload);
 export const resetPasswordWithOtp = (payload) => api.post("/auth/forgot-password/reset", payload);
+
+export const fetchPendingUsers = () => api.get("/admin/pending-users");
+export const fetchCompanyUsers = () => api.get("/admin/users");
+export const approveOrRejectUser = (payload) => api.post("/admin/approve-user", payload);
+export const updateUserRole = (payload) => api.put("/admin/update-role", payload);
+export const deleteUserById = (userId) => api.delete(`/admin/delete-user/${userId}`);
