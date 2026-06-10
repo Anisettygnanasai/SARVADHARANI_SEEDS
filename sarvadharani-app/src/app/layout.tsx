@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { SmoothScrollProvider } from '@/components/providers/SmoothScrollProvider';
-import AIAssistant from '@/components/ui/AIAssistant';
+import dynamic from 'next/dynamic';
+
+const AIAssistant = dynamic(() => import('@/components/ui/AIAssistant'));
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],

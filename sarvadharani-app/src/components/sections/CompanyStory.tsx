@@ -1,14 +1,15 @@
 'use client';
 
-import { useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
-import { timeline } from '@/data/timeline';
+import { useRef, useState, useEffect } from 'react';
+import { motion, useInView, AnimatePresence } from 'framer-motion';
+import { timeline, TimelineMilestone } from '@/data/timeline';
 import { fadeUp, staggerContainer } from '@/lib/animations';
-import Link from 'next/link';
+import { X } from 'lucide-react';
 
 export function CompanyStory() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
+  const [selectedTimelineItem, setSelectedTimelineItem] = useState<TimelineMilestone | null>(null);
 
   return (
     <section id="story" className="section-padding bg-ivory overflow-hidden">
@@ -46,31 +47,75 @@ export function CompanyStory() {
             ))}
           </div>
 
-          {/* Mobile Timeline Link */}
-          <div className="lg:hidden mt-8 border-l border-paddy-gold-200 ml-4 pl-6 space-y-6">
-            {timeline.slice(0, 3).map((item, i) => (
-              <Link 
-                key={`mobile-link-${i}`} 
-                href="/journey"
-                className="block relative active:scale-95 transition-transform"
+          {/* Mobile Timeline */}
+          <div className="lg:hidden mt-8 border-l border-paddy-gold-200 ml-4 pl-0 space-y-0">
+            {timeline.map((item, i) => (
+              <button 
+                key={`mobile-tl-${i}`} 
+                onClick={() => setSelectedTimelineItem(item)}
+                className="w-full text-left relative active:bg-paddy-gold-50 transition-colors h-[76px] flex items-center group"
               >
-                <div className="absolute -left-[30px] top-2 w-3 h-3 rounded-full bg-paddy-gold" />
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-cormorant text-paddy-gold font-bold">{item.year}</span>
+                <div className="absolute -left-[5px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-paddy-gold" />
+                <div className="pl-6">
+                  <div className="font-cormorant text-paddy-gold font-bold text-sm mb-0.5">{item.year}</div>
+                  <h3 className="font-jakarta text-[15px] font-bold text-deep-forest leading-tight pr-4">{item.title}</h3>
                 </div>
-                <h3 className="font-jakarta text-lg font-bold text-deep-forest">{item.title}</h3>
-              </Link>
+              </button>
             ))}
-            
-            <div className="pt-4">
-              <Link href="/journey" className="text-paddy-gold font-semibold underline text-sm">
-                Explore Full Journey
-              </Link>
-            </div>
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {selectedTimelineItem && (
+          <TimelineBottomSheet 
+            item={selectedTimelineItem} 
+            onClose={() => setSelectedTimelineItem(null)} 
+          />
+        )}
+      </AnimatePresence>
     </section>
+  );
+}
+
+function TimelineBottomSheet({ item, onClose }: { item: TimelineMilestone, onClose: () => void }) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[200] bg-black/60 lg:hidden"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className="absolute bottom-0 left-0 right-0 bg-ivory rounded-t-[20px] p-6 pb-10 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-12 h-1 bg-paddy-gold-200 rounded-full mx-auto mb-6" />
+        <div className="flex justify-between items-start mb-4">
+          <div className="pr-4">
+            <span className="font-cormorant text-paddy-gold font-bold text-lg">{item.year}</span>
+            <h3 className="font-jakarta text-xl font-bold text-deep-forest mt-1">{item.title}</h3>
+          </div>
+          <button onClick={onClose} className="p-2 -mr-2 bg-white rounded-full text-deep-forest flex-shrink-0 shadow-sm border border-paddy-gold-100">
+            <X size={20} />
+          </button>
+        </div>
+        <p className="font-inter text-warm-gray text-sm leading-relaxed mb-4">
+          {item.description}
+        </p>
+        <div className="inline-flex items-center gap-2 p-3 rounded-xl bg-paddy-gold-50 border border-paddy-gold-100">
+          <span className="font-inter text-xs font-semibold text-paddy-gold-600">
+            {item.highlight}
+          </span>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

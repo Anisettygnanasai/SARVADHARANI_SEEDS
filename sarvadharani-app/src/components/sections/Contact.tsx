@@ -122,12 +122,12 @@ export function Contact() {
                 <form onSubmit={handleSubmit} className="space-y-6" id="contact-form">
                   <h3 className="font-jakarta font-bold text-xl text-deep-forest mb-6">Send Us a Message</h3>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-5">
                     <FloatingInput id="contact-name" label="Full Name *" name="name" type="text" value={formData.name} onChange={handleChange} required />
                     <FloatingInput id="contact-email" label="Email Address *" name="email" type="email" value={formData.email} onChange={handleChange} required />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-5">
                     <FloatingInput id="contact-phone" label="Phone Number" name="phone" type="tel" value={formData.phone} onChange={handleChange} />
                     <div className="relative">
                       <select
@@ -135,7 +135,7 @@ export function Contact() {
                         name="interest"
                         value={formData.interest}
                         onChange={handleChange}
-                        className="w-full px-4 pt-6 pb-2 rounded-xl border-2 border-paddy-gold-100 bg-ivory font-inter text-sm text-deep-forest focus:border-paddy-gold focus:outline-none transition-colors appearance-none"
+                        className="w-full px-3 md:px-4 pt-5 pb-1 md:pt-6 md:pb-2 rounded-xl border-2 border-paddy-gold-100 bg-ivory font-inter text-sm text-deep-forest focus:border-paddy-gold focus:outline-none transition-colors appearance-none"
                       >
                         <option value="">Select Interest</option>
                         <option value="seed-purchase">Seed Purchase</option>
@@ -159,9 +159,9 @@ export function Contact() {
                       value={formData.message}
                       onChange={handleChange}
                       rows={5}
-                      required
                       placeholder=" "
-                      className="w-full px-4 pt-6 pb-2 rounded-xl border-2 border-paddy-gold-100 bg-ivory font-inter text-sm text-deep-forest focus:border-paddy-gold focus:outline-none transition-colors resize-none peer"
+                      required
+                      className="w-full px-3 md:px-4 pt-5 md:pt-6 pb-2 min-h-[100px] md:min-h-[160px] rounded-xl border-2 border-paddy-gold-100 bg-ivory font-inter text-sm text-deep-forest focus:border-paddy-gold focus:outline-none transition-colors resize-y peer"
                     />
                     <label
                       htmlFor="contact-message"
@@ -308,7 +308,7 @@ function FloatingInput({
         onChange={onChange}
         required={required}
         placeholder=" "
-        className="w-full px-4 pt-6 pb-2 rounded-xl border-2 border-paddy-gold-100 bg-ivory font-inter text-sm text-deep-forest focus:border-paddy-gold focus:outline-none transition-colors peer"
+        className="w-full px-3 md:px-4 pt-5 pb-1 md:pt-6 md:pb-2 rounded-xl border-2 border-paddy-gold-100 bg-ivory font-inter text-sm text-deep-forest focus:border-paddy-gold focus:outline-none transition-colors peer"
       />
       <label
         htmlFor={id}

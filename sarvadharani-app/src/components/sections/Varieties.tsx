@@ -103,7 +103,7 @@ function VarietyCard({ variety }: { variety: RiceVariety }) {
           >
             {variety.name}
           </h3>
-          <p className="font-inter text-[10px] md:text-xs text-warm-gray mb-3 md:mb-4 italic">{variety.tagline}</p>
+          <p className="hidden md:block font-inter text-xs text-warm-gray mb-4 italic">{variety.tagline}</p>
 
           {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-2 md:gap-3 mb-3 md:mb-5">
@@ -111,19 +111,27 @@ function VarietyCard({ variety }: { variety: RiceVariety }) {
               <Clock size={13} className="text-paddy-gold flex-shrink-0" />
               <span className="font-inter text-[10px] md:text-xs text-deep-forest/70">{variety.duration}</span>
             </div>
-            <div className="flex items-center gap-2">
+            
+            {/* Desktop Only Stats */}
+            <div className="hidden md:flex items-center gap-2">
               <Wheat size={13} className="text-natural-green flex-shrink-0" />
-              <span className="font-inter text-[10px] md:text-xs text-deep-forest/70">{variety.yieldPotential}</span>
+              <span className="font-inter text-xs text-deep-forest/70">{variety.yieldPotential}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2">
               <Shield size={13} className="text-earth-brown flex-shrink-0" />
-              <span className="font-inter text-[10px] md:text-xs text-deep-forest/70 truncate">{variety.grainType}</span>
+              <span className="font-inter text-xs text-deep-forest/70 truncate">{variety.grainType}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2">
               <MapPin size={13} className="text-paddy-gold flex-shrink-0" />
-              <span className="font-inter text-[10px] md:text-xs text-deep-forest/70 truncate">
+              <span className="font-inter text-xs text-deep-forest/70 truncate">
                 {variety.suitableRegions.length}+ Regions
               </span>
+            </div>
+
+            {/* Mobile Only Stat: Segment */}
+            <div className="flex md:hidden items-center gap-2">
+              <Shield size={13} className="text-earth-brown flex-shrink-0" />
+              <span className="font-inter text-[10px] text-deep-forest/70">{variety.segment}</span>
             </div>
           </div>
 

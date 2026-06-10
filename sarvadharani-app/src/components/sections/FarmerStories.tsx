@@ -265,22 +265,23 @@ export function FarmerStories() {
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-ivory rounded-t-3xl max-h-[85vh] overflow-y-auto"
+              className="w-full bg-ivory rounded-t-[20px] pb-8 shadow-2xl relative"
             >
-              <div className="sticky top-0 bg-ivory/95 backdrop-blur-sm px-6 py-4 border-b border-paddy-gold-100 flex justify-between items-center z-10">
-                <h3 className="font-cormorant text-xl font-bold text-deep-forest">Farmer Story</h3>
+              <div className="sticky top-0 px-5 pt-4 pb-2 flex justify-between items-start z-10">
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1 bg-paddy-gold-200 rounded-full" />
+                <h3 className="font-cormorant text-xl font-bold text-deep-forest mt-2">Farmer Story</h3>
                 <button
                   onClick={() => setSelectedFarmer(null)}
-                  className="p-2 -mr-2 text-warm-gray hover:text-deep-forest transition-colors"
+                  className="p-2 -mr-2 bg-white rounded-full text-deep-forest shadow-sm border border-paddy-gold-100 mt-0"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
 
-              <div className="p-6">
-                <div className="flex items-center gap-4 mb-6">
+              <div className="px-5 pb-5">
+                <div className="flex items-center gap-3 mb-5">
                   <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center text-white font-cormorant text-2xl font-bold flex-shrink-0"
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-white font-cormorant text-xl font-bold flex-shrink-0 shadow-sm"
                     style={{ background: 'linear-gradient(135deg, #3D6B4F, #52A370)' }}
                   >
                     {selectedFarmer.avatar}
@@ -294,32 +295,32 @@ export function FarmerStories() {
                   </div>
                 </div>
 
-                <div className="relative mb-8 bg-white p-5 rounded-2xl border border-paddy-gold-100 shadow-sm">
-                  <Quote size={24} className="text-paddy-gold opacity-30 absolute -top-3 -left-2" />
-                  <p className="font-inter text-sm text-deep-forest/80 leading-relaxed italic relative z-10">
+                <div className="relative mb-5 bg-white p-4 rounded-2xl border border-paddy-gold-100 shadow-sm">
+                  <Quote size={20} className="text-paddy-gold opacity-30 absolute -top-2 -left-1" />
+                  <p className="font-inter text-xs text-deep-forest/80 leading-relaxed italic relative z-10">
                     "{selectedFarmer.quote}"
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  <div className="bg-natural-green-50 rounded-2xl p-4 text-center">
-                    <div className="font-cormorant text-2xl font-bold text-natural-green mb-1">{selectedFarmer.acres}</div>
-                    <div className="font-inter text-xs text-natural-green-700 uppercase tracking-wide">Farm Size</div>
+                <div className="grid grid-cols-2 gap-2 mb-5">
+                  <div className="bg-natural-green-50 rounded-xl p-3 text-center">
+                    <div className="font-cormorant text-xl font-bold text-natural-green mb-0.5">{selectedFarmer.acres}</div>
+                    <div className="font-inter text-[10px] text-natural-green-700 uppercase tracking-wide">Farm Size</div>
                   </div>
-                  <div className="bg-paddy-gold-50 rounded-2xl p-4 text-center">
-                    <div className="font-cormorant text-2xl font-bold text-paddy-gold mb-1">{selectedFarmer.improvement}</div>
-                    <div className="font-inter text-xs text-paddy-gold-600 uppercase tracking-wide">Yield Gain</div>
+                  <div className="bg-paddy-gold-50 rounded-xl p-3 text-center">
+                    <div className="font-cormorant text-xl font-bold text-paddy-gold mb-0.5">{selectedFarmer.improvement}</div>
+                    <div className="font-inter text-[10px] text-paddy-gold-600 uppercase tracking-wide">Yield Gain</div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-earth-brown/5 rounded-2xl border border-earth-brown/10 mb-6">
-                  <span className="font-inter text-sm font-semibold text-earth-brown">Additional Income</span>
-                  <span className="font-cormorant text-xl font-bold text-earth-brown">{selectedFarmer.income}</span>
+                <div className="flex items-center justify-between p-3 bg-earth-brown/5 rounded-xl border border-earth-brown/10 mb-5">
+                  <span className="font-inter text-xs font-semibold text-earth-brown">Additional Income</span>
+                  <span className="font-cormorant text-lg font-bold text-earth-brown">{selectedFarmer.income}</span>
                 </div>
 
-                <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-paddy-gold text-white shadow-md">
-                  <TrendingUp size={16} />
-                  <span className="font-inter text-sm font-semibold">Variety Used: {selectedFarmer.variety}</span>
+                <div className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-paddy-gold text-white shadow-md">
+                  <TrendingUp size={14} />
+                  <span className="font-inter text-xs font-semibold">Variety Used: {selectedFarmer.variety}</span>
                 </div>
               </div>
             </motion.div>

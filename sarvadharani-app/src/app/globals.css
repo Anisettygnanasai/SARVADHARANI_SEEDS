@@ -131,8 +131,8 @@
 
   /* Section Spacing */
   .section-padding {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+    padding-top: 1.5rem; /* 24px */
+    padding-bottom: 1.5rem; /* 24px */
   }
 
   @media (min-width: 768px) {
@@ -197,12 +197,13 @@
     color: var(--warm-gray);
   }
 
-  /* Primary Button */
   .btn-primary {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    padding: 0.875rem 2rem;
+    padding: 0 1.5rem;
+    height: 44px;
     background: var(--paddy-gold);
     color: white;
     font-family: var(--font-jakarta);
@@ -243,17 +244,19 @@
   .btn-secondary {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    padding: 0.875rem 2rem;
-    background: transparent;
-    color: var(--deep-forest);
+    padding: 0 1.5rem;
+    height: 44px;
     font-family: var(--font-jakarta);
     font-size: 0.9rem;
     font-weight: 600;
     letter-spacing: 0.02em;
     border-radius: 9999px;
-    border: 2px solid var(--deep-forest);
     transition: all 0.3s var(--transition-expo);
+    background: transparent;
+    color: var(--deep-forest);
+    border: 2px solid var(--deep-forest);
   }
 
   .btn-secondary:hover {
@@ -272,11 +275,21 @@
     border-radius: 100px;
   }
 
-  /* Card Base */
+  /* Premium Card Styles */
   .card-base {
-    background: var(--rice-white);
-    border-radius: 1.5rem;
+    background: var(--ivory);
     border: 1px solid rgba(200, 152, 30, 0.12);
+    box-shadow: 0 8px 30px rgba(107,76,42,0.06);
+    border-radius: 1rem; /* 16px radius for mobile */
+  }
+
+  @media (min-width: 768px) {
+    .card-base {
+      border-radius: 1.5rem; /* 24px radius for desktop */
+    }
+  }
+
+  .card-base {
     overflow: hidden;
     transition: all 0.4s var(--transition-expo);
   }
@@ -285,6 +298,13 @@
     border-color: rgba(200, 152, 30, 0.3);
     transform: translateY(-4px);
     box-shadow: 0 20px 60px rgba(107, 76, 42, 0.12);
+  }
+
+  @media (min-width: 768px) {
+    .btn-primary, .btn-secondary {
+      height: 48px;
+      padding: 0 2rem;
+    }
   }
 
   /* Glass Morphism */

@@ -114,13 +114,20 @@ export default function AIAssistant() {
       <div className="fixed bottom-6 right-6 z-[100]">
         <AnimatePresence>
           {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
-              className="absolute bottom-16 right-0 w-[340px] h-[500px] max-h-[80vh] bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-paddy-gold-100 flex flex-col overflow-hidden"
-            >
+            <>
+              {/* Mobile Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/40 z-[190] md:hidden"
+                onClick={() => setIsOpen(false)}
+              />
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+                className="fixed md:absolute bottom-0 md:bottom-16 left-0 right-0 md:left-auto md:right-0 w-full md:w-[340px] h-[85vh] md:h-[500px] max-h-[85vh] bg-white rounded-t-[20px] md:rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-paddy-gold-100 flex flex-col overflow-hidden z-[200]"
+              >
               {/* Header */}
               <div className="bg-deep-forest text-white p-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -168,7 +175,8 @@ export default function AIAssistant() {
                   </button>
                 </form>
               </div>
-            </motion.div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
 
