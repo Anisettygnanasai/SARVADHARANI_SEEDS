@@ -1,15 +1,13 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
-import { motion, useInView, AnimatePresence } from 'framer-motion';
-import { timeline, TimelineMilestone } from '@/data/timeline';
+import { useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
+import { timeline } from '@/data/timeline';
 import { fadeUp, staggerContainer } from '@/lib/animations';
-import { X } from 'lucide-react';
 
 export function CompanyStory() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
-  const [selectedTimelineItem, setSelectedTimelineItem] = useState<TimelineMilestone | null>(null);
 
   return (
     <section id="story" className="section-padding bg-ivory overflow-hidden">
@@ -35,87 +33,21 @@ export function CompanyStory() {
 
         {/* Timeline */}
         <div className="relative">
-          {/* Vertical line for desktop */}
+          {/* Vertical line */}
           <div
-            className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2"
+            className="absolute left-4 lg:left-1/2 top-0 bottom-0 w-px lg:-translate-x-1/2"
             style={{ background: 'linear-gradient(180deg, transparent, #C8981E 10%, #C8981E 90%, transparent)' }}
           />
 
-          <div className="hidden lg:block space-y-0">
+          <div className="space-y-8 lg:space-y-0">
             {timeline.map((item, i) => (
               <TimelineCard key={`timeline-${i}`} item={item} index={i} />
             ))}
           </div>
 
-          {/* Mobile Timeline */}
-          <div className="lg:hidden mt-8 border-l border-paddy-gold-200 ml-4 pl-0 space-y-0">
-            {timeline.map((item, i) => (
-              <button 
-                key={`mobile-tl-${i}`} 
-                onClick={() => setSelectedTimelineItem(item)}
-                className="w-full text-left relative active:bg-paddy-gold-50 transition-colors h-[76px] flex items-center group"
-              >
-                <div className="absolute -left-[5px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-paddy-gold" />
-                <div className="pl-6">
-                  <div className="font-cormorant text-paddy-gold font-bold text-sm mb-0.5">{item.year}</div>
-                  <h3 className="font-jakarta text-[15px] font-bold text-deep-forest leading-tight pr-4">{item.title}</h3>
-                </div>
-              </button>
-            ))}
-          </div>
         </div>
       </div>
-
-      <AnimatePresence>
-        {selectedTimelineItem && (
-          <TimelineBottomSheet 
-            item={selectedTimelineItem} 
-            onClose={() => setSelectedTimelineItem(null)} 
-          />
-        )}
-      </AnimatePresence>
     </section>
-  );
-}
-
-function TimelineBottomSheet({ item, onClose }: { item: TimelineMilestone, onClose: () => void }) {
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = 'unset'; };
-  }, []);
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] bg-black/60 lg:hidden"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="absolute bottom-0 left-0 right-0 bg-ivory rounded-t-[20px] p-6 pb-10 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="w-12 h-1 bg-paddy-gold-200 rounded-full mx-auto mb-6" />
-        <div className="flex justify-between items-start mb-4">
-          <div className="pr-4">
-            <span className="font-cormorant text-paddy-gold font-bold text-lg">{item.year}</span>
-            <h3 className="font-jakarta text-xl font-bold text-deep-forest mt-1">{item.title}</h3>
-          </div>
-          <button onClick={onClose} className="p-2 -mr-2 bg-white rounded-full text-deep-forest flex-shrink-0 shadow-sm border border-paddy-gold-100">
-            <X size={20} />
-          </button>
-        </div>
-        <p className="font-inter text-warm-gray text-sm leading-relaxed mb-4">
-          {item.description}
-        </p>
-        <div className="inline-flex items-center gap-2 p-3 rounded-xl bg-paddy-gold-50 border border-paddy-gold-100">
-          <span className="font-inter text-xs font-semibold text-paddy-gold-600">
-            {item.highlight}
-          </span>
-        </div>
-      </motion.div>
-    </motion.div>
   );
 }
 
@@ -143,7 +75,7 @@ function TimelineCard({
         initial={{ opacity: 0, x: isEven ? -60 : 60 }}
         animate={isInView ? { opacity: 1, x: 0 } : {}}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-        className={`lg:w-[46%] ${isEven ? 'lg:pr-16' : 'lg:pl-16'}`}
+        className={`w-full lg:w-[46%] pl-10 lg:pl-0 ${isEven ? 'lg:pr-16' : 'lg:pl-16'}`}
       >
         <div
           className={`p-8 group transition-shadow duration-500 rounded-3xl ${
@@ -206,7 +138,7 @@ function TimelineCard({
         initial={{ scale: 0, opacity: 0 }}
         animate={isInView ? { scale: 1, opacity: 1 } : {}}
         transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1], delay: 0.2 }}
-        className="hidden lg:flex absolute left-1/2 -translate-x-1/2 w-14 h-14 rounded-full items-center justify-center z-10"
+        className="flex absolute left-4 lg:left-1/2 -translate-x-1/2 top-8 lg:top-auto w-8 h-8 lg:w-14 lg:h-14 rounded-full items-center justify-center z-10"
         style={{
           background: isFuture ? '#FDF8E7' : 'white',
           boxShadow: isFuture

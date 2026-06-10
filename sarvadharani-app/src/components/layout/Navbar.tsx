@@ -102,7 +102,7 @@ export function Navbar() {
               className="flex items-center gap-2 group"
               id="nav-logo"
             >
-              <div className="relative w-10 h-10 md:w-20 md:h-20 flex-shrink-0">
+              <div className="relative w-12 h-12 md:w-20 md:h-20 flex-shrink-0">
                 <Image
                   src="/images/sarvadharani-logo.jpg"
                   alt="Sarvadharani Seeds Logo"
@@ -183,7 +183,7 @@ export function Navbar() {
               </button>
               <button
                 onClick={() => setIsMobileOpen(!isMobileOpen)}
-                className="lg:hidden p-2 -mr-2 text-deep-forest hover:bg-paddy-gold-50 rounded-full transition-colors"
+                className="lg:hidden p-1.5 md:p-2 rounded-xl text-deep-forest hover:bg-paddy-gold-50 transition-colors"
                 aria-label="Toggle mobile menu"
                 id="nav-mobile-toggle"
               >
