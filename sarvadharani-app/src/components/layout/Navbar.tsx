@@ -89,7 +89,7 @@ export function Navbar() {
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
           isScrolled
-            ? 'bg-ivory/90 backdrop-blur-xl border-b border-paddy-gold-200/50 shadow-[0_2px_30px_rgba(107,76,42,0.08)]'
+            ? 'bg-white/95 backdrop-blur-xl border-b border-gray-200/50 shadow-[0_2px_30px_rgba(107,76,42,0.08)]'
             : 'bg-transparent'
         }`}
       >
@@ -125,7 +125,7 @@ export function Navbar() {
                     onClick={() => !link.children && handleNavClick(link.href)}
                     className={`flex items-center gap-1 px-4 py-2 font-jakarta text-sm font-semibold transition-colors duration-200 rounded-full ${
                       isScrolled 
-                        ? 'text-deep-forest hover:text-paddy-gold hover:bg-paddy-gold-50' 
+                        ? 'text-gray-800 hover:text-[#C8981E] hover:bg-gray-50' 
                         : 'text-white/90 hover:text-white hover:bg-white/10'
                     }`}
                     id={`nav-${link.label.toLowerCase().replace(' ', '-')}`}
@@ -149,13 +149,13 @@ export function Navbar() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 8, scale: 0.95 }}
                         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute top-full left-0 mt-2 w-48 bg-ivory/95 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden shadow-premium py-2"
+                        className="absolute top-full left-0 mt-2 w-48 bg-white/95 backdrop-blur-xl border border-gray-200 rounded-2xl overflow-hidden shadow-xl py-2"
                       >
                         {link.children.map((child) => (
                            <button
                             key={child.label}
                             onClick={() => { handleNavClick(child.href); setActiveDropdown(null); }}
-                            className="w-full text-left px-4 py-2.5 font-inter text-sm text-deep-forest/80 hover:text-paddy-gold hover:bg-paddy-gold-50 transition-colors"
+                            className="w-full text-left px-5 py-2.5 font-inter text-sm font-medium text-gray-800 hover:text-[#C8981E] hover:bg-gray-50 transition-colors"
                           >
                             {child.label}
                           </button>
@@ -169,7 +169,7 @@ export function Navbar() {
 
             {/* CTA + Mobile Toggle */}
             <div className="flex items-center gap-3">
-              <div className={`hidden lg:flex items-center gap-2 mr-2 transition-colors ${isScrolled ? 'text-deep-forest/60' : 'text-white/80'}`}>
+              <div className={`hidden lg:flex items-center gap-2 mr-2 transition-colors ${isScrolled ? 'text-gray-600' : 'text-white/80'}`}>
                 <a href="https://www.instagram.com/sarvadharani_seeds" target="_blank" rel="noopener noreferrer" className={`p-2 transition-colors ${isScrolled ? 'hover:text-[#E1306C]' : 'hover:text-white'}`} aria-label="Instagram">
                   <SocialInstagram />
                 </a>
@@ -186,7 +186,7 @@ export function Navbar() {
               </button>
               <button
                 onClick={() => setIsMobileOpen(!isMobileOpen)}
-                className={`lg:hidden p-1.5 md:p-2 rounded-xl transition-colors ${isScrolled ? 'text-deep-forest hover:bg-paddy-gold-50' : 'text-white hover:bg-white/20'}`}
+                className={`lg:hidden p-1.5 md:p-2 rounded-xl transition-colors ${isScrolled ? 'text-gray-800 hover:bg-gray-100' : 'text-white hover:bg-white/20'}`}
                 aria-label="Toggle mobile menu"
                 id="nav-mobile-toggle"
               >
@@ -205,7 +205,7 @@ export function Navbar() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-40 bg-ivory flex flex-col pt-24"
+            className="fixed inset-0 z-40 bg-white flex flex-col pt-24"
           >
             <div className="section-container flex-1 flex flex-col justify-center gap-2">
               {navLinks.map((link, i) => (
@@ -215,7 +215,7 @@ export function Navbar() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                   onClick={() => handleNavClick(link.href)}
-                  className="text-left py-4 border-b border-paddy-gold-100 font-cormorant text-3xl font-bold text-deep-forest hover:text-paddy-gold transition-colors"
+                  className="text-left py-4 border-b border-gray-100 font-cormorant text-3xl font-bold text-gray-800 hover:text-[#C8981E] transition-colors"
                 >
                   {link.label}
                 </motion.button>
