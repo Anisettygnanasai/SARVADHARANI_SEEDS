@@ -52,7 +52,6 @@ export function Navbar() {
   const handleNavClick = (href: string) => {
     setIsMobileOpen(false);
     if (href.startsWith('#')) {
-      // If we are not on the home page and clicking a hash link, navigate to home first
       if (window.location.pathname !== '/') {
         router.push(`/${href}`);
       } else {
@@ -95,19 +94,19 @@ export function Navbar() {
         }`}
       >
         <div className="section-container">
-          <div className="flex items-center justify-between h-14 md:h-20">
+          <div className="flex items-center justify-between h-16 md:h-24">
             {/* Logo */}
             <button
               onClick={() => handleNavClick('#hero')}
               className="flex items-center gap-2 group"
               id="nav-logo"
             >
-              <div className="relative w-12 h-12 md:w-20 md:h-20 flex-shrink-0">
+              <div className="relative w-16 h-16 md:w-24 md:h-24 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
                 <Image
-                  src="/images/sarvadharani-logo.jpg"
+                  src="/images/logo-cropped.png"
                   alt="Sarvadharani Seeds Logo"
                   fill
-                  className="object-contain rounded-md"
+                  className="object-contain drop-shadow-md"
                   priority
                 />
               </div>
@@ -124,7 +123,11 @@ export function Navbar() {
                 >
                   <button
                     onClick={() => !link.children && handleNavClick(link.href)}
-                    className="flex items-center gap-1 px-4 py-2 font-jakarta text-sm font-500 text-deep-forest/80 hover:text-paddy-gold transition-colors duration-200 rounded-full hover:bg-paddy-gold-50"
+                    className={`flex items-center gap-1 px-4 py-2 font-jakarta text-sm font-semibold transition-colors duration-200 rounded-full ${
+                      isScrolled 
+                        ? 'text-deep-forest hover:text-paddy-gold hover:bg-paddy-gold-50' 
+                        : 'text-white/90 hover:text-white hover:bg-white/10'
+                    }`}
                     id={`nav-${link.label.toLowerCase().replace(' ', '-')}`}
                   >
                     {link.label}
@@ -146,10 +149,10 @@ export function Navbar() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 8, scale: 0.95 }}
                         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute top-full left-0 mt-2 w-48 glass rounded-2xl overflow-hidden shadow-premium py-2"
+                        className="absolute top-full left-0 mt-2 w-48 bg-ivory/95 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden shadow-premium py-2"
                       >
                         {link.children.map((child) => (
-                          <button
+                           <button
                             key={child.label}
                             onClick={() => { handleNavClick(child.href); setActiveDropdown(null); }}
                             className="w-full text-left px-4 py-2.5 font-inter text-sm text-deep-forest/80 hover:text-paddy-gold hover:bg-paddy-gold-50 transition-colors"
@@ -166,28 +169,28 @@ export function Navbar() {
 
             {/* CTA + Mobile Toggle */}
             <div className="flex items-center gap-3">
-              <div className="hidden lg:flex items-center gap-2 mr-2">
-                <a href="https://www.instagram.com/sarvadharani_seeds" target="_blank" rel="noopener noreferrer" className="p-2 text-deep-forest/60 hover:text-[#E1306C] transition-colors" aria-label="Instagram">
+              <div className={`hidden lg:flex items-center gap-2 mr-2 transition-colors ${isScrolled ? 'text-deep-forest/60' : 'text-white/80'}`}>
+                <a href="https://www.instagram.com/sarvadharani_seeds" target="_blank" rel="noopener noreferrer" className={`p-2 transition-colors ${isScrolled ? 'hover:text-[#E1306C]' : 'hover:text-white'}`} aria-label="Instagram">
                   <SocialInstagram />
                 </a>
-                <a href="https://youtube.com/@sarvadharaniseeds" target="_blank" rel="noopener noreferrer" className="p-2 text-deep-forest/60 hover:text-[#FF0000] transition-colors" aria-label="YouTube">
+                <a href="https://youtube.com/@sarvadharaniseeds" target="_blank" rel="noopener noreferrer" className={`p-2 transition-colors ${isScrolled ? 'hover:text-[#FF0000]' : 'hover:text-white'}`} aria-label="YouTube">
                   <SocialYoutube />
                 </a>
               </div>
               <button
                 onClick={() => handleNavClick('#contact')}
-                className="hidden lg:flex btn-primary text-sm py-2.5 px-5"
+                className="hidden lg:flex btn-primary text-sm py-2.5 px-5 shadow-lg"
                 id="nav-cta"
               >
                 <span>Explore Varieties</span>
               </button>
               <button
                 onClick={() => setIsMobileOpen(!isMobileOpen)}
-                className="lg:hidden p-1.5 md:p-2 rounded-xl text-deep-forest hover:bg-paddy-gold-50 transition-colors"
+                className={`lg:hidden p-1.5 md:p-2 rounded-xl transition-colors ${isScrolled ? 'text-deep-forest hover:bg-paddy-gold-50' : 'text-white hover:bg-white/20'}`}
                 aria-label="Toggle mobile menu"
                 id="nav-mobile-toggle"
               >
-                {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
+                {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
             </div>
           </div>
@@ -202,7 +205,7 @@ export function Navbar() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-40 bg-ivory/98 backdrop-blur-xl flex flex-col pt-20"
+            className="fixed inset-0 z-40 bg-ivory flex flex-col pt-24"
           >
             <div className="section-container flex-1 flex flex-col justify-center gap-2">
               {navLinks.map((link, i) => (
