@@ -63,7 +63,7 @@ function VarietyCard({ variety }: { variety: RiceVariety }) {
         style={{ transformStyle: 'preserve-3d' }}
       >
         {/* Image */}
-        <div className="relative h-56 overflow-hidden">
+        <div className="relative h-32 md:h-56 overflow-hidden">
           <Image
             src={variety.image}
             alt={variety.name}
@@ -96,32 +96,32 @@ function VarietyCard({ variety }: { variety: RiceVariety }) {
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           <h3
-            className="font-cormorant text-2xl font-bold mb-1 tracking-tight"
+            className="font-cormorant text-xl md:text-2xl font-bold mb-0.5 md:mb-1 tracking-tight"
             style={{ color: variety.color }}
           >
             {variety.name}
           </h3>
-          <p className="font-inter text-xs text-warm-gray mb-4 italic">{variety.tagline}</p>
+          <p className="font-inter text-[10px] md:text-xs text-warm-gray mb-3 md:mb-4 italic">{variety.tagline}</p>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-3 mb-5">
+          <div className="grid grid-cols-2 gap-2 md:gap-3 mb-3 md:mb-5">
             <div className="flex items-center gap-2">
               <Clock size={13} className="text-paddy-gold flex-shrink-0" />
-              <span className="font-inter text-xs text-deep-forest/70">{variety.duration}</span>
+              <span className="font-inter text-[10px] md:text-xs text-deep-forest/70">{variety.duration}</span>
             </div>
             <div className="flex items-center gap-2">
               <Wheat size={13} className="text-natural-green flex-shrink-0" />
-              <span className="font-inter text-xs text-deep-forest/70">{variety.yieldPotential}</span>
+              <span className="font-inter text-[10px] md:text-xs text-deep-forest/70">{variety.yieldPotential}</span>
             </div>
             <div className="flex items-center gap-2">
               <Shield size={13} className="text-earth-brown flex-shrink-0" />
-              <span className="font-inter text-xs text-deep-forest/70 truncate">{variety.grainType}</span>
+              <span className="font-inter text-[10px] md:text-xs text-deep-forest/70 truncate">{variety.grainType}</span>
             </div>
             <div className="flex items-center gap-2">
               <MapPin size={13} className="text-paddy-gold flex-shrink-0" />
-              <span className="font-inter text-xs text-deep-forest/70 truncate">
+              <span className="font-inter text-[10px] md:text-xs text-deep-forest/70 truncate">
                 {variety.suitableRegions.length}+ Regions
               </span>
             </div>

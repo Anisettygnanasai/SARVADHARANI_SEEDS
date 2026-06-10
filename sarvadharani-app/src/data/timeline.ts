@@ -19,20 +19,20 @@ export const timeline: TimelineMilestone[] = [
   },
   {
     year: '2024',
-    title: 'Expanded Product Portfolio',
+    title: 'Company Established',
     description:
-      'MTU-1001 and MTU-1156 — our first two high-quality varieties — added to our portfolio after rigorous field evaluation across Odisha districts. Early farmer feedback confirms what our evaluations showed: these seeds deliver.',
-    highlight: 'MTU-1001 & MTU-1156 distributed to market',
+      'Focused on providing quality rice seed solutions to farming communities.',
+    highlight: 'Founded in Rayagada, Odisha',
     icon: '🌾',
     isFuture: false,
   },
   {
-    year: '2025',
-    title: 'Strengthening Farmer Reach',
+    year: '2026',
+    title: 'Growth & Farmer Reach',
     description:
-      'SUVARNA, DHARANI, MYTHRI, LALIT, PRATHIBA, MTU-1153, MTU-7029 added to our distribution network — covering all major soil types and growing conditions. First dealer network activated across Rayagada.',
-    highlight: '9 varieties available + 50+ dealer points',
-    icon: '🔬',
+      'Strengthening farmer partnerships and expanding agricultural support across regions.',
+    highlight: '500+ Partner Farmers',
+    icon: '🤝',
     isFuture: false,
   },
   {

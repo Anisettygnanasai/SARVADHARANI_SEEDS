@@ -131,8 +131,8 @@
 
   /* Section Spacing */
   .section-padding {
-    padding-top: 4.5rem;
-    padding-bottom: 4.5rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
   }
 
   @media (min-width: 768px) {

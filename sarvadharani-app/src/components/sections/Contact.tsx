@@ -90,7 +90,7 @@ export function Contact() {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-3"
           >
-            <div className="card-base p-8 lg:p-10">
+            <div className="card-base p-5 md:p-8 lg:p-10">
               {formStatus === 'success' ? (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -218,9 +218,9 @@ export function Contact() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1, duration: 0.6 }}
-                  className="card-base p-5 flex items-start gap-4"
+                  className="card-base p-4 md:p-5 flex items-start gap-4"
                 >
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ background: `${info.color}15` }}>
                     <Icon size={22} style={{ color: info.color }} />
                   </div>
