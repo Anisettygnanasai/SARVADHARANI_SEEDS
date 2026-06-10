@@ -14,7 +14,6 @@ const ImpactNumbers = dynamic(() => import('@/components/sections/ImpactNumbers'
 const Sustainability = dynamic(() => import('@/components/sections/Sustainability').then(mod => mod.Sustainability));
 const Gallery = dynamic(() => import('@/components/sections/Gallery').then(mod => mod.Gallery));
 const Contact = dynamic(() => import('@/components/sections/Contact').then(mod => mod.Contact));
-import { WhatsAppButton } from '@/components/ui/WhatsAppButton';
 import { CustomCursor } from '@/components/ui/CustomCursor';
 
 export default function HomePage() {
@@ -37,7 +36,6 @@ export default function HomePage() {
         <Contact />
       </main>
       <Footer />
-      <WhatsAppButton />
     </>
   );
 }
