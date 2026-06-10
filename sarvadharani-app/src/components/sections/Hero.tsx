@@ -87,7 +87,7 @@ export function Hero() {
             </span>
             <span className="hidden sm:block w-8 sm:w-12 h-px bg-paddy-gold-200/50" />
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
-              <Leaf size={12} className="text-paddy-gold-200" />
+              <Leaf size={12} className="text-[#E8BE24]" />
               <span className="font-inter text-[10px] sm:text-xs text-white font-medium">
                 Premium Rice Seeds
               </span>
@@ -105,8 +105,8 @@ export function Hero() {
                   initial="hidden"
                   animate="visible"
                 >
-                  {word === 'Tomorrow\'s' || word === 'Harvests' || word === 'Tomorrow' ? (
-                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-paddy-gold-200 via-paddy-gold to-paddy-gold-600">
+                  {word === 'Tomorrow' ? (
+                    <span className="text-[#E8BE24] drop-shadow-md">
                       {word}
                     </span>
                   ) : (
@@ -122,7 +122,8 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            className="font-jakarta text-base sm:text-lg lg:text-xl text-ivory/90 max-w-2xl mb-8 sm:mb-10 leading-relaxed font-normal drop-shadow-md"
+            className="font-jakarta text-base sm:text-lg lg:text-xl max-w-2xl mb-8 sm:mb-10 leading-relaxed font-medium drop-shadow-lg"
+            style={{ color: '#F3F4F6' }} /* Fallback to guarantee bright readable gray */
           >
             Delivering trusted rice seed varieties through quality processing, scientific standards, and farmer-focused innovation.
           </motion.p>
@@ -141,7 +142,7 @@ export function Hero() {
                 const el = document.querySelector('#varieties');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 sm:py-4 bg-paddy-gold text-white font-jakarta text-sm sm:text-base font-semibold rounded-full hover:bg-paddy-gold-400 transition-colors shadow-[0_0_40px_rgba(200,152,30,0.3)] hover:shadow-[0_0_60px_rgba(200,152,30,0.5)]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 sm:py-4 bg-[#C8981E] text-white font-jakarta text-sm sm:text-base font-semibold rounded-full hover:bg-[#E8BE24] transition-colors shadow-[0_0_40px_rgba(200,152,30,0.4)]"
               id="hero-cta-varieties"
             >
               <Leaf size={16} />
@@ -154,10 +155,10 @@ export function Hero() {
                 const el = document.querySelector('#contact');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 sm:py-4 bg-white/10 backdrop-blur-sm text-white border border-white/30 font-jakarta text-sm sm:text-base font-semibold rounded-full hover:bg-white/20 transition-colors shadow-lg"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 sm:py-4 bg-white/10 backdrop-blur-md text-white border border-white/40 font-jakarta text-sm sm:text-base font-semibold rounded-full hover:bg-white/20 transition-colors shadow-lg"
               id="hero-cta-contact"
             >
-              <FlaskConical size={16} className="text-paddy-gold-200" />
+              <FlaskConical size={16} className="text-[#E8BE24]" />
               Contact Us
             </motion.button>
           </motion.div>
@@ -178,7 +179,7 @@ export function Hero() {
                 <div className="font-cormorant text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-none mb-1 sm:mb-2 drop-shadow-md">
                   {stat.value}
                 </div>
-                <div className="font-inter text-[10px] sm:text-xs lg:text-sm text-ivory/80 font-semibold tracking-wide uppercase">{stat.label}</div>
+                <div className="font-inter text-[10px] sm:text-xs lg:text-sm text-gray-300 font-semibold tracking-wide uppercase">{stat.label}</div>
               </motion.div>
             ))}
           </motion.div>
@@ -195,15 +196,15 @@ export function Hero() {
         aria-label="Scroll to next section"
         id="hero-scroll-indicator"
       >
-        <span className="text-[10px] font-inter tracking-[0.2em] uppercase text-white/60 group-hover:text-paddy-gold transition-colors">
+        <span className="text-[10px] font-inter tracking-[0.2em] uppercase text-white/60 group-hover:text-[#E8BE24] transition-colors">
           Scroll
         </span>
         <motion.div
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-10 h-10 rounded-full border border-white/20 bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:border-paddy-gold/50 group-hover:bg-paddy-gold/10 transition-all"
+          className="w-10 h-10 rounded-full border border-white/20 bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:border-[#C8981E]/50 group-hover:bg-[#C8981E]/10 transition-all"
         >
-          <ArrowDown size={16} className="text-white/90 group-hover:text-paddy-gold transition-colors" />
+          <ArrowDown size={16} className="text-white/90 group-hover:text-[#E8BE24] transition-colors" />
         </motion.div>
       </motion.button>
 
