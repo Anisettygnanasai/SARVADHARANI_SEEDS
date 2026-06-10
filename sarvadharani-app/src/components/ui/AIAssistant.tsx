@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, Send, Bot, User, Phone } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, User, Phone, Leaf } from 'lucide-react';
 import { varieties } from '@/data/varieties';
 
 interface Message {
@@ -10,6 +10,12 @@ interface Message {
   role: 'bot' | 'user';
   content: string | React.ReactNode;
 }
+
+const WhatsappIcon = () => (
+  <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+);
 
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,13 +44,48 @@ export default function AIAssistant() {
     if (text.includes('contact') || text.includes('phone') || text.includes('email') || text.includes('call') || text.includes('address') || text.includes('where')) {
       return (
         <div>
-          <p className="mb-2">You can reach us at:</p>
-          <ul className="space-y-1 mb-2">
+          <p className="mb-2">You can reach us directly at:</p>
+          <ul className="space-y-1 mb-3">
             <li><strong>Phone:</strong> +91 9381027593, +91 8209574729</li>
             <li><strong>Email:</strong> sarvadharaniseeds024@gmail.com</li>
             <li><strong>Office:</strong> At-Panasaguda, Via Sikarpai, Kalyan Singpur, Rayagada, Odisha - 765017</li>
           </ul>
-          <button onClick={() => { const el = document.querySelector('#contact'); el?.scrollIntoView(); setIsOpen(false); }} className="text-paddy-gold underline text-sm font-semibold">Go to Contact Form</button>
+          <button 
+            onClick={() => { const el = document.querySelector('#contact'); el?.scrollIntoView({ behavior: 'smooth' }); setIsOpen(false); }} 
+            className="flex items-center gap-1.5 bg-deep-forest text-white px-4 py-2 rounded-full text-xs font-semibold shadow-sm hover:bg-paddy-gold transition-colors"
+          >
+            <Phone size={14} /> Open Contact Form
+          </button>
+        </div>
+      );
+    }
+
+    // Company matching
+    if (text.includes('company') || text.includes('about') || text.includes('story') || text.includes('who are you')) {
+      return (
+        <div>
+          <p className="mb-3">Sarvadharani Seeds was founded in 2024 in Rayagada, Odisha with a mission to bring science-backed, premium rice seeds directly to farmers. We focus on 100% quality processing, farmer-centric innovation, and rigorous scientific standards.</p>
+          <button 
+            onClick={() => { const el = document.querySelector('#story'); el?.scrollIntoView({ behavior: 'smooth' }); setIsOpen(false); }} 
+            className="text-paddy-gold underline text-sm font-semibold hover:text-paddy-gold-600 transition-colors"
+          >
+            Read Our Full Story
+          </button>
+        </div>
+      );
+    }
+
+    // Broad varieties matching
+    if (text.includes('variety') || text.includes('varieties') || text.includes('rice') || text.includes('seed') || text.includes('recommend')) {
+      return (
+        <div>
+          <p className="mb-3">We offer a premium range of certified rice varieties tailored for different soils and needs, including <strong>MTU-1001, MTU-1156, MTU-7029, SUVARNA, DHARANI</strong>, and more.</p>
+          <button 
+            onClick={() => { const el = document.querySelector('#varieties'); el?.scrollIntoView({ behavior: 'smooth' }); setIsOpen(false); }} 
+            className="flex items-center justify-center w-full gap-1.5 bg-paddy-gold text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-md hover:bg-paddy-gold-400 hover:shadow-lg transition-all"
+          >
+            <Leaf size={16} /> Explore Rice Varieties
+          </button>
         </div>
       );
     }
@@ -67,26 +108,20 @@ export default function AIAssistant() {
               <li>Yield: {v.yieldPotential}</li>
               <li>Grain: {v.grainType}</li>
             </ul>
-            <a href={`/products/${v.id}`} className="text-paddy-gold underline text-sm font-semibold">View Full Details</a>
+            <a href={`/products/${v.id}`} className="text-paddy-gold underline text-sm font-semibold hover:text-paddy-gold-600">View Full Details</a>
           </div>
         );
       }
     }
 
-    // Recommendation matching
-    if (text.includes('recommend') || text.includes('what variety') || text.includes('which variety') || text.includes('suit me')) {
-      return "We have varieties for all needs! For the highest yield, consider MTU-7029. If you need something very fast, PRATHIBA finishes in 110-115 days. For premium export quality, try SUVARNA or LALIT. You can also contact our experts for a personalized recommendation.";
-    }
-
-    if (text.includes('company') || text.includes('about') || text.includes('story')) {
-      return "Sarvadharani Seeds was founded in 2024 in Rayagada, Odisha with a mission to bring science-backed, premium rice seeds directly to farmers. We currently offer 9 certified varieties and partner with over 500 farmers.";
-    }
-
     // Fallback
     return (
       <div>
-        <p className="mb-2">I'm not quite sure about that. Our agricultural experts would be happy to help you!</p>
-        <button onClick={() => { const el = document.querySelector('#contact'); el?.scrollIntoView(); setIsOpen(false); }} className="flex items-center gap-1 text-paddy-gold font-semibold underline text-sm">
+        <p className="mb-3">I'm not quite sure about that. Our agricultural experts would be happy to help you!</p>
+        <button 
+          onClick={() => { const el = document.querySelector('#contact'); el?.scrollIntoView({ behavior: 'smooth' }); setIsOpen(false); }} 
+          className="flex items-center gap-1.5 bg-deep-forest text-white px-4 py-2 rounded-full text-xs font-semibold shadow-sm hover:bg-paddy-gold transition-colors"
+        >
           <Phone size={14} /> Contact Us
         </button>
       </div>
@@ -111,7 +146,7 @@ export default function AIAssistant() {
 
   return (
     <>
-      <div className="fixed bottom-6 right-6 z-[100]">
+      <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-3">
         <AnimatePresence>
           {isOpen && (
             <motion.div
@@ -119,7 +154,7 @@ export default function AIAssistant() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
               transition={{ duration: 0.3 }}
-              className="absolute bottom-16 right-0 w-[calc(100vw-3rem)] max-w-[340px] h-[500px] max-h-[80vh] bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-paddy-gold-100 flex flex-col overflow-hidden"
+              className="absolute bottom-[4.5rem] right-0 w-[calc(100vw-3rem)] max-w-[340px] h-[500px] max-h-[80vh] bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-paddy-gold-100 flex flex-col overflow-hidden"
             >
               {/* Header */}
               <div className="bg-deep-forest text-white p-4 flex items-center justify-between">
@@ -128,7 +163,7 @@ export default function AIAssistant() {
                     <Bot size={18} />
                   </div>
                   <div>
-                    <h3 className="font-jakarta font-bold text-sm">Sarvadharani Assistant</h3>
+                    <h3 className="font-jakarta font-bold text-sm">Sarvadharani AI</h3>
                     <p className="font-inter text-[10px] text-white/70">Always here to help</p>
                   </div>
                 </div>
@@ -172,14 +207,29 @@ export default function AIAssistant() {
           )}
         </AnimatePresence>
 
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setIsOpen(!isOpen)}
-          className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg transition-colors duration-300 ${isOpen ? 'bg-earth-brown' : 'bg-paddy-gold'}`}
-        >
-          {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
-        </motion.button>
+        <div className="flex flex-row-reverse gap-3 items-center">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setIsOpen(!isOpen)}
+            className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-[0_8px_30px_rgba(200,152,30,0.3)] transition-colors duration-300 ${isOpen ? 'bg-earth-brown' : 'bg-paddy-gold'}`}
+            aria-label="Toggle AI Assistant"
+          >
+            {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
+          </motion.button>
+          
+          <motion.a
+            href="https://wa.me/919381027593"
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-[0_8px_30px_rgba(37,211,102,0.3)] transition-colors duration-300 bg-[#25D366] hover:bg-[#128C7E]"
+            aria-label="Chat on WhatsApp"
+          >
+            <WhatsappIcon />
+          </motion.a>
+        </div>
       </div>
     </>
   );

@@ -7,7 +7,7 @@ import { ArrowDown, Leaf, FlaskConical } from 'lucide-react';
 import { RiceParticles } from '@/components/ui/RiceParticles';
 import { wordReveal, fadeUp, staggerContainer } from '@/lib/animations';
 
-const headline = 'Growing Stronger Harvests for Tomorrow';
+const headline = 'Growing Stronger for Tomorrow';
 const words = headline.split(' ');
 
 const stats = [
@@ -95,7 +95,7 @@ export function Hero() {
           </motion.div>
 
           {/* Animated Headline */}
-          <h1 className="font-cormorant text-[2.75rem] sm:text-5xl md:text-6xl lg:text-[5.5rem] leading-[1.1] font-bold text-white mb-5 sm:mb-6 tracking-tight drop-shadow-xl text-balance">
+          <h1 className="font-cormorant text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] leading-[1.1] font-bold text-white mb-5 sm:mb-6 tracking-tight drop-shadow-xl text-balance">
             {words.map((word, i) => (
               <span key={i} className="inline-block overflow-hidden mr-[0.25em] last:mr-0 py-1">
                 <motion.span
@@ -122,7 +122,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            className="font-jakarta text-base sm:text-lg lg:text-2xl text-ivory/90 max-w-2xl mb-8 sm:mb-10 leading-relaxed font-normal drop-shadow-md"
+            className="font-jakarta text-base sm:text-lg lg:text-xl text-ivory/90 max-w-2xl mb-8 sm:mb-10 leading-relaxed font-normal drop-shadow-md"
           >
             Delivering trusted rice seed varieties through quality processing, scientific standards, and farmer-focused innovation.
           </motion.p>

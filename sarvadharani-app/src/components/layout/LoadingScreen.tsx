@@ -28,16 +28,16 @@ export function LoadingScreen() {
         >
           {/* Main Logo */}
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+            initial={{ scale: 0.9, opacity: 0, y: 10 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
-            className="relative w-32 h-32 md:w-40 md:h-40"
+            className="relative w-40 h-40 md:w-56 md:h-56"
           >
             <Image
-              src="/images/sarvadharani-logo.jpg"
+              src="/images/logo-cropped.png"
               alt="Sarvadharani Seeds Logo"
               fill
-              className="object-contain rounded-2xl shadow-xl bg-white"
+              className="object-contain drop-shadow-xl"
               priority
             />
           </motion.div>
