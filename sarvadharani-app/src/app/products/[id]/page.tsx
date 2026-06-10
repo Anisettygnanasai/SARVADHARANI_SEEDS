@@ -8,13 +8,14 @@ import { CheckCircle2, ChevronRight, Clock, Shield, Wheat, ArrowLeft } from 'luc
 import { Metadata } from 'next';
 
 interface Props {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export function generateMetadata({ params }: Props): Metadata {
-  const variety = varieties.find((v) => v.id === params.id);
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const resolvedParams = await params;
+  const variety = varieties.find((v) => v.id === resolvedParams.id);
   if (!variety) return { title: 'Product Not Found' };
   
   return {
@@ -29,8 +30,9 @@ export function generateStaticParams() {
   }));
 }
 
-export default function ProductPage({ params }: Props) {
-  const variety = varieties.find((v) => v.id === params.id);
+export default async function ProductPage({ params }: Props) {
+  const resolvedParams = await params;
+  const variety = varieties.find((v) => v.id === resolvedParams.id);
 
   if (!variety) {
     notFound();

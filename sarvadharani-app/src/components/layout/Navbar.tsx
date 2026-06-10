@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const navLinks = [
   { label: 'Home', href: '#hero' },
@@ -13,15 +14,15 @@ const navLinks = [
     label: 'Varieties',
     href: '#varieties',
     children: [
-      { label: 'MTU-1001', href: '#varieties' },
-      { label: 'MTU-1156', href: '#varieties' },
-      { label: 'MTU-1153', href: '#varieties' },
-      { label: 'MTU-7029', href: '#varieties' },
-      { label: 'SUVARNA', href: '#varieties' },
-      { label: 'DHARANI', href: '#varieties' },
-      { label: 'MYTHRI', href: '#varieties' },
-      { label: 'LALIT', href: '#varieties' },
-      { label: 'PRATHIBA', href: '#varieties' },
+      { label: 'MTU-1001', href: '/products/mtu-1001' },
+      { label: 'MTU-1156', href: '/products/mtu-1156' },
+      { label: 'MTU-1153', href: '/products/mtu-1153' },
+      { label: 'MTU-7029', href: '/products/mtu-7029' },
+      { label: 'SUVARNA', href: '/products/suvarna' },
+      { label: 'DHARANI', href: '/products/dharani' },
+      { label: 'MYTHRI', href: '/products/mythri' },
+      { label: 'LALIT', href: '/products/lalit' },
+      { label: 'PRATHIBA', href: '/products/prathiba' },
     ],
   },
   { label: 'Research', href: '#research' },
@@ -40,6 +41,7 @@ export function Navbar() {
   const { scrollYProgress } = useScroll();
   const progressWidth = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
   const dropdownTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 60);
@@ -49,8 +51,17 @@ export function Navbar() {
 
   const handleNavClick = (href: string) => {
     setIsMobileOpen(false);
-    const el = document.querySelector(href);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    if (href.startsWith('#')) {
+      // If we are not on the home page and clicking a hash link, navigate to home first
+      if (window.location.pathname !== '/') {
+        router.push(`/${href}`);
+      } else {
+        const el = document.querySelector(href);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      router.push(href);
+    }
   };
 
   const handleDropdownEnter = (label: string) => {
@@ -84,14 +95,14 @@ export function Navbar() {
         }`}
       >
         <div className="section-container">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-14 md:h-20">
             {/* Logo */}
             <button
               onClick={() => handleNavClick('#hero')}
               className="flex items-center gap-2 group"
               id="nav-logo"
             >
-              <div className="relative w-16 h-16 md:w-20 md:h-20 flex-shrink-0">
+              <div className="relative w-12 h-12 md:w-20 md:h-20 flex-shrink-0">
                 <Image
                   src="/images/sarvadharani-logo.jpg"
                   alt="Sarvadharani Seeds Logo"
@@ -172,11 +183,11 @@ export function Navbar() {
               </button>
               <button
                 onClick={() => setIsMobileOpen(!isMobileOpen)}
-                className="lg:hidden p-2 rounded-xl text-deep-forest hover:bg-paddy-gold-50 transition-colors"
+                className="lg:hidden p-1.5 md:p-2 rounded-xl text-deep-forest hover:bg-paddy-gold-50 transition-colors"
                 aria-label="Toggle mobile menu"
                 id="nav-mobile-toggle"
               >
-                {isMobileOpen ? <X size={22} /> : <Menu size={22} />}
+                {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
             </div>
           </div>

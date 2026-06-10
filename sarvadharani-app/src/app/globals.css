@@ -114,7 +114,7 @@
   .section-container {
     max-width: 1440px;
     margin: 0 auto;
-    padding: 0 2rem;
+    padding: 0 1.25rem;
   }
 
   @media (min-width: 768px) {
@@ -131,8 +131,15 @@
 
   /* Section Spacing */
   .section-padding {
-    padding-top: 7rem;
-    padding-bottom: 7rem;
+    padding-top: 4.5rem;
+    padding-bottom: 4.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .section-padding {
+      padding-top: 7rem;
+      padding-bottom: 7rem;
+    }
   }
 
   @media (min-width: 1024px) {

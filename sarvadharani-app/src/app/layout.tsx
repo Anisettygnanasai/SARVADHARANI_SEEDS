@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { SmoothScrollProvider } from '@/components/providers/SmoothScrollProvider';
+import AIAssistant from '@/components/ui/AIAssistant';
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -107,6 +108,7 @@ export default function RootLayout({
       <body className="bg-ivory text-deep-forest antialiased">
         <SmoothScrollProvider>
           {children}
+          <AIAssistant />
         </SmoothScrollProvider>
       </body>
     </html>

@@ -36,10 +36,27 @@ export function Contact() {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormStatus('loading');
-    setTimeout(() => setFormStatus('success'), 1800);
+    
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Failed to send message');
+      
+      setFormStatus('success');
+    } catch (error) {
+      console.error(error);
+      setFormStatus('idle');
+      alert('Failed to send message. Please try again or call us directly.');
+    }
   };
 
   return (
