@@ -38,8 +38,54 @@ export default function AIChatInterface({ isOpen, onClose }: AIChatInterfaceProp
   const generateResponse = (input: string): string | React.ReactNode => {
     const text = input.toLowerCase();
 
-    // Contact matching
-    if (text.includes('contact') || text.includes('phone') || text.includes('email') || text.includes('call') || text.includes('address') || text.includes('where')) {
+    // 1. Greetings & Small Talk
+    if (/(hi|hello|hey|greetings|good morning|good afternoon)/.test(text)) {
+      return "Hello! Welcome to Sarvadharani Seeds. How can I assist you today? You can ask me about our rice varieties, our company story, or how to contact us.";
+    }
+    if (/(how are you|who are you|what are you)/.test(text)) {
+      return "I'm the Sarvadharani AI Assistant! I'm here to help you navigate our premium rice seed offerings, learn about our farming practices, and connect with our team. What would you like to explore?";
+    }
+    if (/(thanks|thank you)/.test(text)) {
+      return "You're very welcome! Let me know if there's anything else you need.";
+    }
+
+    // 2. Buying / Pricing / Dealers
+    if (/(buy|price|cost|purchase|dealer|distributor)/.test(text)) {
+      return (
+        <div>
+          <p className="mb-3">For pricing, bulk purchases, or to become a dealer, please contact our sales team directly. We offer competitive rates for premium certified seeds.</p>
+          <button 
+            onClick={() => { const el = document.querySelector('#contact'); el?.scrollIntoView({ behavior: 'smooth' }); onClose(); }} 
+            className="flex items-center gap-1.5 bg-deep-forest text-white px-4 py-2 rounded-full text-xs font-semibold shadow-sm hover:bg-paddy-gold transition-colors"
+          >
+            <Phone size={14} /> Get a Quote
+          </button>
+        </div>
+      );
+    }
+
+    // 3. Farmers / Testimonials / Yield
+    if (/(farmer|testimonial|review|grow|yield|harvest)/.test(text) && !text.includes('variety')) {
+      return "Our seeds have consistently delivered 15-20% higher yields for farmers across Odisha and Andhra Pradesh. We work closely with our farming community to ensure they get the best results. Check out our 'Farmer Stories' section on the homepage!";
+    }
+
+    // 4. Team / Founders
+    if (/(founder|team|owner|manage|director|who owns)/.test(text)) {
+      return "Sarvadharani Seeds is managed by a dedicated team of agricultural experts and visionaries based in Rayagada, Odisha. We are passionate about empowering farmers with high-quality, scientifically processed seeds.";
+    }
+
+    // 5. Processing / Quality / Science
+    if (/(process|quality|science|test|facility|lab)/.test(text)) {
+      return "Quality is our top priority! We use state-of-the-art processing facilities to clean, sort, and test our seeds. Every batch undergoes rigorous germination and purity tests to ensure 100% reliability for our farmers.";
+    }
+
+    // 6. Sustainability / Environment
+    if (/(sustainab|environment|eco|green)/.test(text)) {
+      return "We believe in sustainable agriculture. Our practices focus on reducing chemical dependency, promoting soil health, and offering robust seed varieties that require fewer resources while delivering maximum yield.";
+    }
+
+    // 7. Contact matching
+    if (text.includes('contact') || text.includes('phone') || text.includes('email') || text.includes('call') || text.includes('address') || text.includes('where') || text.includes('location')) {
       return (
         <div>
           <p className="mb-2">You can reach us directly at:</p>
@@ -58,8 +104,8 @@ export default function AIChatInterface({ isOpen, onClose }: AIChatInterfaceProp
       );
     }
 
-    // Company matching
-    if (text.includes('company') || text.includes('about') || text.includes('story') || text.includes('who are you')) {
+    // 8. Company matching
+    if (text.includes('company') || text.includes('about') || text.includes('story') || text.includes('history')) {
       return (
         <div>
           <p className="mb-3">Sarvadharani Seeds was founded in 2024 in Rayagada, Odisha with a mission to bring science-backed, premium rice seeds directly to farmers. We focus on 100% quality processing, farmer-centric innovation, and rigorous scientific standards.</p>
@@ -73,29 +119,19 @@ export default function AIChatInterface({ isOpen, onClose }: AIChatInterfaceProp
       );
     }
 
-    // Broad varieties matching
-    if (text.includes('variety') || text.includes('varieties') || text.includes('rice') || text.includes('seed') || text.includes('recommend')) {
-      return (
-        <div>
-          <p className="mb-3">We offer a premium range of certified rice varieties tailored for different soils and needs, including <strong>MTU-1001, MTU-1156, MTU-7029, SUVARNA, DHARANI</strong>, and more.</p>
-          <button 
-            onClick={() => { const el = document.querySelector('#varieties'); el?.scrollIntoView({ behavior: 'smooth' }); onClose(); }} 
-            className="flex items-center justify-center w-full gap-1.5 bg-paddy-gold text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-md hover:bg-paddy-gold-400 hover:shadow-lg transition-all"
-          >
-            <Leaf size={16} /> Explore Rice Varieties
-          </button>
-        </div>
-      );
-    }
-
-    // Variety specific matching
+    // 9. Variety specific matching
+    let foundVariety = false;
     for (const v of varieties) {
-      if (text.includes(v.id.toLowerCase()) || text.includes(v.name.toLowerCase())) {
-        if (text.includes('duration') || text.includes('long')) {
-          return `${v.name} takes about ${v.duration} to mature.`;
+      if (text.includes(v.id.toLowerCase()) || text.includes(v.name.toLowerCase()) || text.replace(/[- ]/g, '').includes(v.id.toLowerCase().replace(/[- ]/g, ''))) {
+        foundVariety = true;
+        if (text.includes('duration') || text.includes('long') || text.includes('time') || text.includes('days')) {
+          return `${v.name} takes about ${v.duration} to mature. It's a great choice for this cycle!`;
         }
-        if (text.includes('yield')) {
-          return `${v.name} has a yield potential of ${v.yieldPotential}.`;
+        if (text.includes('yield') || text.includes('produce') || text.includes('output')) {
+          return `${v.name} has an excellent yield potential of ${v.yieldPotential}.`;
+        }
+        if (text.includes('grain') || text.includes('type') || text.includes('size')) {
+          return `The grain type for ${v.name} is ${v.grainType}.`;
         }
         return (
           <div>
@@ -112,15 +148,31 @@ export default function AIChatInterface({ isOpen, onClose }: AIChatInterfaceProp
       }
     }
 
-    // Fallback
+    // 10. Broad varieties matching (if no specific variety matched)
+    if (/(variety|varieties|rice|seed|recommend|best|types|options|catalog)/.test(text) && !foundVariety) {
+      return (
+        <div>
+          <p className="mb-3">We offer a premium range of certified rice varieties tailored for different soils and needs. Our top performers include <strong>MTU-1001, MTU-1156, MTU-7029, SUVARNA, and DHARANI</strong>.</p>
+          <button 
+            onClick={() => { const el = document.querySelector('#varieties'); el?.scrollIntoView({ behavior: 'smooth' }); onClose(); }} 
+            className="flex items-center justify-center w-full gap-1.5 bg-paddy-gold text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-md hover:bg-paddy-gold-400 hover:shadow-lg transition-all"
+          >
+            <Leaf size={16} /> Explore All Varieties
+          </button>
+        </div>
+      );
+    }
+
+    // 11. Fallback (Smarter)
     return (
       <div>
-        <p className="mb-3">I&apos;m not quite sure about that. Our agricultural experts would be happy to help you!</p>
+        <p className="mb-3">That's an interesting question! While I'm still learning about everything we do at Sarvadharani Seeds, our agricultural experts know all the answers.</p>
+        <p className="mb-3">Would you like to speak directly with our team?</p>
         <button 
           onClick={() => { const el = document.querySelector('#contact'); el?.scrollIntoView({ behavior: 'smooth' }); onClose(); }} 
           className="flex items-center gap-1.5 bg-deep-forest text-white px-4 py-2 rounded-full text-xs font-semibold shadow-sm hover:bg-paddy-gold transition-colors"
         >
-          <Phone size={14} /> Contact Us
+          <Phone size={14} /> Connect With Experts
         </button>
       </div>
     );
