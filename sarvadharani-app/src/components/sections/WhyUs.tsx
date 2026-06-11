@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { TrendingUp, Shield, FlaskConical, CheckCircle2, Users, Leaf, Star, Zap } from 'lucide-react';
+import { TrendingUp, Shield, FlaskConical, CheckCircle2, Users, Leaf, Zap } from 'lucide-react';
 
 const advantages = [
   {

@@ -6,7 +6,7 @@ import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, CheckCircle2, MapPin, Clock, Wheat, Shield } from 'lucide-react';
 import { varieties, type RiceVariety } from '@/data/varieties';
 import { useRouter } from 'next/navigation';
-import { fadeUp, staggerContainer, modalVariants, backdropVariants } from '@/lib/animations';
+import { modalVariants, backdropVariants } from '@/lib/animations';
 
 function RadialProgress({ value, color }: { value: number; color: string }) {
   const r = 28;

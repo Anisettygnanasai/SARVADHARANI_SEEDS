@@ -3,7 +3,6 @@
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { timeline } from '@/data/timeline';
-import { fadeUp, staggerContainer } from '@/lib/animations';
 
 export function CompanyStory() {
   const ref = useRef<HTMLDivElement>(null);

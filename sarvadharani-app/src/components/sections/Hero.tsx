@@ -43,6 +43,7 @@ export function Hero() {
             alt="Sarvadharani Seeds Background"
             fill
             priority
+            placeholder="blur"
             className="object-contain"
             sizes="(max-width: 768px) 90vw, 800px"
           />
@@ -170,7 +171,7 @@ export function Hero() {
             animate="visible"
             className="grid grid-cols-2 lg:grid-cols-4 gap-y-6 gap-x-4 sm:gap-6 lg:gap-8 border-t border-white/20 pt-6 sm:pt-8"
           >
-            {stats.map((stat, i) => (
+            {stats.map((stat) => (
               <motion.div
                 key={stat.label}
                 variants={fadeUp}

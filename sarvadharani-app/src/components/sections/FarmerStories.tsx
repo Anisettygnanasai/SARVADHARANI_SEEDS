@@ -1,9 +1,9 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { motion, useInView, AnimatePresence } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import { farmers } from '@/data/farmers';
-import { TrendingUp, MapPin, Quote, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { TrendingUp, MapPin, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 
 function FarmerCard({ farmer }: { farmer: (typeof farmers)[0] }) {
   return (

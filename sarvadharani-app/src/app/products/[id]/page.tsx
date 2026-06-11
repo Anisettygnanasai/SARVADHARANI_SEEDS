@@ -43,39 +43,42 @@ export default async function ProductPage({ params }: Props) {
       <Navbar />
       
       {/* Hero Banner */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-deep-forest">
-        <div className="absolute inset-0 opacity-30">
+      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-rice-white">
+        {/* Soft, blurred background image */}
+        <div className="absolute inset-0 opacity-[0.15]">
           <Image
             src={variety.image}
             alt={variety.name}
             fill
-            className="object-cover blur-md"
+            className="object-cover blur-2xl transform scale-110"
             priority
           />
         </div>
-        {/* Strong dark green overlay to ensure text contrast everywhere */}
-        <div className="absolute inset-0 bg-deep-forest/60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-deep-forest via-deep-forest/80 to-transparent" />
+        {/* Elegant light gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-rice-white/50 via-transparent to-rice-white" />
         
         <div className="container mx-auto px-4 relative z-10">
-          <Link href="/#varieties" className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-8 transition-colors">
+          <Link href="/#varieties" className="inline-flex items-center gap-2 text-deep-forest/60 hover:text-deep-forest mb-8 transition-colors">
             <ArrowLeft size={16} />
-            <span className="font-inter text-sm font-medium">Back to Varieties</span>
+            <span className="font-inter text-sm font-semibold">Back to Varieties</span>
           </Link>
           
           <div className="max-w-4xl">
             {variety.badge && (
-              <span className="inline-block px-4 py-1.5 rounded-full bg-paddy-gold text-white text-sm font-bold font-inter mb-6">
+              <span 
+                className="inline-block px-4 py-1.5 rounded-full text-white text-sm font-bold font-inter mb-6 shadow-sm"
+                style={{ backgroundColor: variety.color }}
+              >
                 {variety.badge}
               </span>
             )}
-            <h1 className="font-cormorant text-5xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+            <h1 className="font-cormorant text-5xl lg:text-7xl font-bold text-deep-forest mb-6 leading-tight drop-shadow-sm">
               {variety.name}
             </h1>
-            <p className="font-jakarta text-xl lg:text-3xl text-white/90 font-medium mb-4">
+            <p className="font-jakarta text-xl lg:text-3xl text-deep-forest/80 font-bold mb-4">
               {variety.tagline}
             </p>
-            <p className="font-inter text-lg text-white/70 max-w-2xl leading-relaxed">
+            <p className="font-inter text-lg text-deep-forest/70 max-w-2xl leading-relaxed font-medium">
               {variety.description}
             </p>
           </div>

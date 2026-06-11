@@ -10,8 +10,6 @@ export function WhatsAppButton() {
   const [showTooltip, setShowTooltip] = useState(false);
 
   useEffect(() => {
-    let lastScrollY = window.scrollY;
-
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
@@ -20,8 +18,6 @@ export function WhatsAppButton() {
       } else {
         setIsVisible(false);
       }
-
-      lastScrollY = currentScrollY;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
