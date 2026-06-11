@@ -62,7 +62,7 @@ export const varieties: RiceVariety[] = [
     longDescription: 'MTU-1001 is a flagship O.P variety bred specifically for robust growth. It delivers outstanding yield consistency across varied soil types and is highly regarded for its superior milling quality. With built-in disease resistance, farmers save on crop protection costs.',
     color: '#C8981E',
     accentColor: '#FAF0C3',
-    image: '/images/variety-mtu-1001.png',
+    image: '/images/variety-mtu-1001-v2.png',
     stats: { yield: 88, diseaseResistance: 86, maturity: 74, quality: 90 },
     performanceMetrics: [
       { label: 'Yield Range', value: '6.5–8.0 t/ha', detail: 'Consistent across soil types' },
@@ -108,7 +108,7 @@ export const varieties: RiceVariety[] = [
     longDescription: 'MTU-1156 is the dependable short-duration O.P variety. Ideal for farmers with limited water availability, its short cycle allows for multiple crops per year.',
     color: '#6B4C2A',
     accentColor: '#E8D5C2',
-    image: '/images/variety-mtu-1156.png',
+    image: '/images/variety-mtu-1156-v2.png',
     stats: { yield: 82, diseaseResistance: 88, maturity: 84, quality: 80 },
     performanceMetrics: [
       { label: 'Duration', value: '115-120 days', detail: 'Short duration variety' },
@@ -152,7 +152,7 @@ export const varieties: RiceVariety[] = [
     longDescription: 'MTU-1153 combines a short 115-120 day duration with strong disease resistance and high yield potential, making it an economically impactful variety.',
     color: '#3D6B4F',
     accentColor: '#D5E9DC',
-    image: '/images/variety-mtu-1153.png',
+    image: '/images/variety-mtu-1153-v2.png',
     stats: { yield: 85, diseaseResistance: 85, maturity: 85, quality: 85 },
     performanceMetrics: [
       { label: 'Duration', value: '115-120 days', detail: 'Short duration variety' },
@@ -196,7 +196,7 @@ export const varieties: RiceVariety[] = [
     longDescription: 'MTU-7029 requires 145-150 days to mature, but rewards the farmer with exceptional yields. It is suited for areas with assured irrigation and commands great respect from traditional farmers.',
     color: '#C8981E',
     accentColor: '#FDF8E7',
-    image: '/images/variety-mtu-7029.png',
+    image: '/images/variety-mtu-7029-v2.png',
     stats: { yield: 92, diseaseResistance: 84, maturity: 60, quality: 88 },
     performanceMetrics: [
       { label: 'Duration', value: '145-150 days', detail: 'Long duration variety' },
@@ -240,7 +240,7 @@ export const varieties: RiceVariety[] = [
     longDescription: 'SUVARNA is a premium RES segment variety prized for its fine grains and attractive appearance post-milling. It commands a market premium owing to its excellent cooking quality.',
     color: '#3D6B4F',
     accentColor: '#D5E9DC',
-    image: '/images/variety-suvarna.png',
+    image: '/images/variety-suvarna-v2.png',
     stats: { yield: 90, diseaseResistance: 82, maturity: 60, quality: 95 },
     performanceMetrics: [
       { label: 'Duration', value: '145-150 days', detail: 'Long duration variety' },
@@ -285,7 +285,7 @@ export const varieties: RiceVariety[] = [
     longDescription: 'DHARANI is a dependable RES variety. With a 140-145 day duration, it offers strong yields and resilience across varied conditions, making it an ideal choice for progressive farmers.',
     color: '#6B4C2A',
     accentColor: '#E8D5C2',
-    image: '/images/variety-dharani.png',
+    image: '/images/variety-dharani-v2.png',
     stats: { yield: 85, diseaseResistance: 88, maturity: 65, quality: 85 },
     performanceMetrics: [
       { label: 'Duration', value: '140-145 days', detail: 'Medium-Long duration' },
@@ -329,7 +329,7 @@ export const varieties: RiceVariety[] = [
     longDescription: 'MYTHRI is engineered for farmers who prioritize fast turnaround without compromising on grain quality. Its long slender grains and 120-125 day duration make it highly profitable.',
     color: '#C8981E',
     accentColor: '#FDF8E7',
-    image: '/images/variety-mythri.png',
+    image: '/images/variety-mythri-v2.png',
     stats: { yield: 86, diseaseResistance: 85, maturity: 82, quality: 90 },
     performanceMetrics: [
       { label: 'Duration', value: '120-125 days', detail: 'Short duration' },
@@ -373,7 +373,7 @@ export const varieties: RiceVariety[] = [
     longDescription: 'LALIT is prized for its fine, long slender grains and aromatic profile. Completing its cycle in 120-125 days, it delivers premium eating quality and maximum value for the progressive farmer.',
     color: '#3D6B4F',
     accentColor: '#D5E9DC',
-    image: '/images/variety-lalit.png',
+    image: '/images/variety-lalit-v2.png',
     stats: { yield: 82, diseaseResistance: 84, maturity: 82, quality: 95 },
     performanceMetrics: [
       { label: 'Duration', value: '120-125 days', detail: 'Short duration' },
@@ -418,7 +418,7 @@ export const varieties: RiceVariety[] = [
     longDescription: 'PRATHIBA is Sarvadharani\'s ultra-fast RES variety. Maturing in just 110-115 days, it allows farmers unparalleled flexibility in cropping cycles while maintaining impressive yields and disease resistance.',
     color: '#C8981E',
     accentColor: '#FAF0C3',
-    image: '/images/variety-prathiba.png',
+    image: '/images/variety-prathiba-v2.png',
     stats: { yield: 86, diseaseResistance: 88, maturity: 95, quality: 88 },
     performanceMetrics: [
       { label: 'Duration', value: '110-115 days', detail: 'Ultra-short duration' },

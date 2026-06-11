@@ -44,15 +44,17 @@ export default async function ProductPage({ params }: Props) {
       
       {/* Hero Banner */}
       <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-deep-forest">
-        <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 opacity-30">
           <Image
             src={variety.image}
             alt={variety.name}
             fill
-            className="object-cover blur-sm"
+            className="object-cover blur-md"
             priority
           />
         </div>
+        {/* Strong dark green overlay to ensure text contrast everywhere */}
+        <div className="absolute inset-0 bg-deep-forest/60" />
         <div className="absolute inset-0 bg-gradient-to-t from-deep-forest via-deep-forest/80 to-transparent" />
         
         <div className="container mx-auto px-4 relative z-10">
