@@ -32,113 +32,104 @@ function VarietyCard({ variety }: { variety: RiceVariety }) {
   const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-60px' });
-  const [hovered, setHovered] = useState(false);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientY - rect.top) / rect.height - 0.5) * 12;
-    const y = -((e.clientX - rect.left) / rect.width - 0.5) * 12;
-    setTilt({ x, y });
-  };
-  const resetTilt = () => setTilt({ x: 0, y: 0 });
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 50 }}
+      initial={{ opacity: 0, y: 40 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-      className="perspective-1000 cursor-pointer"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); resetTilt(); }}
-      onMouseMove={handleMouseMove}
+      className="group relative flex flex-col bg-white rounded-[2rem] overflow-hidden cursor-pointer border border-warm-gray/10 hover:border-paddy-gold/30 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 will-change-transform"
       onClick={() => router.push(`/products/${variety.id}`)}
       id={`variety-card-${variety.id}`}
     >
-      <motion.div
-        className="card-base overflow-hidden transform-style-3d"
-        animate={{ rotateX: tilt.x, rotateY: tilt.y, scale: hovered ? 1.03 : 1 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        style={{ transformStyle: 'preserve-3d' }}
-      >
-        {/* Image */}
-        <div className="relative h-32 md:h-56 overflow-hidden">
-          <Image
-            src={variety.image}
-            alt={variety.name}
-            fill
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
-            style={{ transform: hovered ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.7s ease' }}
-            sizes="(max-width: 768px) 100vw, 33vw"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-
-          {/* Badge */}
+      {/* Premium Image Section */}
+      <div className="relative h-64 md:h-72 w-full overflow-hidden bg-rice-white">
+        <Image
+          src={variety.image}
+          alt={variety.name}
+          fill
+          className="object-cover transition-transform duration-1000 group-hover:scale-110 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        />
+        {/* Soft elegant gradient for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90 transition-opacity duration-500 group-hover:opacity-100" />
+        
+        {/* Badges */}
+        <div className="absolute top-5 left-5 flex gap-2 z-10">
           {variety.badge && (
-            <div
-              className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold font-inter text-white"
+            <span 
+              className="px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-sm backdrop-blur-md" 
               style={{ background: variety.available ? variety.color : '#6B4C2A' }}
             >
               {variety.badge}
-            </div>
-          )}
-
-          {/* Shimmer on hover */}
-          {hovered && (
-            <motion.div
-              initial={{ opacity: 0, x: '-100%' }}
-              animate={{ opacity: 1, x: '200%' }}
-              transition={{ duration: 0.7 }}
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 pointer-events-none"
-            />
+            </span>
           )}
         </div>
-
-        {/* Content */}
-        <div className="p-4 md:p-6">
-          <h3
-            className="font-cormorant text-xl md:text-2xl font-bold mb-0.5 md:mb-1 tracking-tight"
-            style={{ color: variety.color }}
-          >
+        
+        {/* Title overlay - Apple/Google Store Style */}
+        <div className="absolute bottom-5 left-5 right-5 z-10 transform transition-transform duration-500 group-hover:-translate-y-1">
+          <h3 className="font-cormorant text-3xl md:text-4xl font-bold text-white mb-1.5 drop-shadow-lg tracking-tight">
             {variety.name}
           </h3>
-          <p className="font-inter text-[10px] md:text-xs text-warm-gray mb-3 md:mb-4 italic">{variety.tagline}</p>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-2 md:gap-3 mb-3 md:mb-5">
-            <div className="flex items-center gap-2">
-              <Clock size={13} className="text-paddy-gold flex-shrink-0" />
-              <span className="font-inter text-[10px] md:text-xs text-deep-forest/70">{variety.duration}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Wheat size={13} className="text-natural-green flex-shrink-0" />
-              <span className="font-inter text-[10px] md:text-xs text-deep-forest/70">{variety.yieldPotential}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Shield size={13} className="text-earth-brown flex-shrink-0" />
-              <span className="font-inter text-[10px] md:text-xs text-deep-forest/70 truncate">{variety.grainType}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin size={13} className="text-paddy-gold flex-shrink-0" />
-              <span className="font-inter text-[10px] md:text-xs text-deep-forest/70 truncate">
-                {variety.suitableRegions.length}+ Regions
-              </span>
-            </div>
-          </div>
-
-          {/* Explore CTA */}
-          <motion.div
-            className="flex items-center gap-2 font-jakarta text-sm font-semibold"
-            style={{ color: variety.color }}
-            animate={{ x: hovered ? 4 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            Explore Variety
-            <ChevronRight size={16} />
-          </motion.div>
+          <p className="font-inter text-sm md:text-base text-white/90 font-medium drop-shadow-md">
+            {variety.tagline}
+          </p>
         </div>
-      </motion.div>
+      </div>
+
+      {/* Clean Content Section */}
+      <div className="p-6 md:p-7 flex-1 flex flex-col justify-between bg-white relative">
+        {/* Subtle decorative accent */}
+        <div 
+          className="absolute top-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          style={{ background: `linear-gradient(90deg, ${variety.color}, transparent)` }}
+        />
+
+        {/* Stats Grid - Minimalist approach */}
+        <div className="grid grid-cols-2 gap-y-5 gap-x-4 mb-8">
+          <div className="flex flex-col">
+            <span className="text-[10px] md:text-xs uppercase tracking-wider text-warm-gray font-bold mb-1.5">Duration</span>
+            <span className="font-jakarta text-sm md:text-base font-semibold text-deep-forest flex items-center gap-2">
+              <Clock size={16} className="text-paddy-gold" /> {variety.duration}
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] md:text-xs uppercase tracking-wider text-warm-gray font-bold mb-1.5">Yield Potential</span>
+            <span className="font-jakarta text-sm md:text-base font-semibold text-deep-forest flex items-center gap-2">
+              <Wheat size={16} className="text-natural-green" /> {variety.yieldPotential}
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] md:text-xs uppercase tracking-wider text-warm-gray font-bold mb-1.5">Grain Type</span>
+            <span className="font-jakarta text-sm md:text-base font-semibold text-deep-forest flex items-center gap-2">
+              <Shield size={16} className="text-earth-brown" /> <span className="truncate">{variety.grainType}</span>
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] md:text-xs uppercase tracking-wider text-warm-gray font-bold mb-1.5">Adaptability</span>
+            <span className="font-jakarta text-sm md:text-base font-semibold text-deep-forest flex items-center gap-2">
+              <MapPin size={16} className="text-paddy-gold" /> {variety.suitableRegions.length}+ Regions
+            </span>
+          </div>
+        </div>
+
+        {/* Action Button - High contrast modern style */}
+        <div className="pt-5 border-t border-warm-gray/10 flex items-center justify-between group-hover:border-paddy-gold/30 transition-colors mt-auto">
+          <span 
+            className="font-jakarta text-sm md:text-base font-bold transition-colors"
+            style={{ color: variety.color }}
+          >
+            Explore Variety Details
+          </span>
+          <div 
+            className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-transform duration-500 group-hover:scale-110 shadow-sm"
+            style={{ backgroundColor: variety.color }}
+          >
+            <ChevronRight size={20} className="transform group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </div>
+      </div>
     </motion.div>
   );
 }
@@ -151,34 +142,37 @@ function VarietyModal({ variety, onClose }: { variety: RiceVariety; onClose: () 
     <motion.div
       variants={backdropVariants}
       initial="hidden" animate="visible" exit="hidden"
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
       onClick={onClose}
     >
       <motion.div
         variants={modalVariants}
         initial="hidden" animate="visible" exit="exit"
-        className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl bg-ivory shadow-premium"
+        className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-ivory shadow-premium"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header Image */}
-        <div className="relative h-64 overflow-hidden rounded-t-3xl">
-          <Image src={variety.image} alt={variety.name} fill className="object-cover" sizes="800px" />
-          <div className="absolute inset-0 bg-gradient-to-t from-deep-forest/80 via-transparent to-transparent" />
+        <div className="relative h-72 md:h-80 overflow-hidden rounded-t-3xl bg-rice-white">
+          <Image src={variety.image} alt={variety.name} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 900px" />
+          <div className="absolute inset-0 bg-gradient-to-t from-deep-forest/90 via-deep-forest/30 to-transparent" />
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/40 transition-colors"
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/40 hover:scale-105 transition-all"
             id="modal-close"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
-          <div className="absolute bottom-6 left-6">
+          <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8">
             {variety.badge && (
-              <span className="px-3 py-1 rounded-full text-xs font-bold text-white bg-paddy-gold mb-2 inline-block">
+              <span 
+                className="px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-sm backdrop-blur-md mb-3 inline-block"
+                style={{ background: variety.available ? variety.color : '#6B4C2A' }}
+              >
                 {variety.badge}
               </span>
             )}
-            <h2 className="font-cormorant text-4xl font-bold text-white">{variety.name}</h2>
-            <p className="font-inter text-sm text-white/80 italic mt-1">{variety.tagline}</p>
+            <h2 className="font-cormorant text-4xl md:text-5xl font-bold text-white drop-shadow-lg tracking-tight mb-2">{variety.name}</h2>
+            <p className="font-inter text-base md:text-lg text-white/90 font-medium drop-shadow-md">{variety.tagline}</p>
           </div>
         </div>
 
